@@ -490,8 +490,8 @@
             height: 100%;
             max-width: 100%;
             max-height: 100%;
-            aspect-ratio: auto; /* biarkan flexbox mengatur */
-            object-fit: contain;
+            aspect-ratio: 8 / 5; /* Kunci rasionya */
+            object-fit: contain; /* Biarkan ada ruang kosong (letterbox) agar tidak gepeng */
         }
 
         /* Sembunyikan toolbar di mode fullscreen */
@@ -696,7 +696,7 @@
                     </div>
 
                     <div class="btn-row">
-                        <!-- Tombol Fullscreen ditambahkan di sini -->
+                        <!-- Tombol Fullscreen -->
                         <button class="btn" id="fullscreenBtn" data-tooltip="Mode Fokus (Fullscreen)">⛶</button>
                         <button class="btn" id="clearBtn" data-tooltip="Bersihkan kanvas">🗑️</button>
                         <button class="btn" id="copyImgBtn" data-tooltip="Copy gambar">🖼️</button>
@@ -978,7 +978,7 @@
             // === View switching ===
             function showMenu() {
                 if (activeBoardId && dirty) persistActiveBoard();
-                exitFullscreen(); // Pastikan keluar dari fullscreen
+                exitFullscreen();
 
                 currentView = 'menu';
                 viewEditor.classList.remove('active');
@@ -1139,8 +1139,32 @@
             // === Gambar ===
             function getCoordinates(e) {
                 const rect = canvas.getBoundingClientRect();
-                const scaleX = canvas.width / rect.width;
-                const scaleY = canvas.height / rect.height;
+                
+                // Rasio asli kanvas (800x500 = 1.6)
+                const canvasRatio = canvas.width / canvas.height;
+                // Rasio tampilan elemen kanvas di layar
+                const rectRatio = rect.width / rect.height;
+
+                let renderWidth, renderHeight, offsetX, offsetY;
+
+                // Deteksi letterboxing (jika rasio layar beda dengan rasio kanvas)
+                if (rectRatio > canvasRatio) {
+                    // Layar lebih lebar (ada ruang kosong kiri-kanan)
+                    renderHeight = rect.height;
+                    renderWidth = renderHeight * canvasRatio;
+                    offsetX = (rect.width - renderWidth) / 2;
+                    offsetY = 0;
+                } else {
+                    // Layar lebih tinggi (ada ruang kosong atas-bawah)
+                    renderWidth = rect.width;
+                    renderHeight = renderWidth / canvasRatio;
+                    offsetX = 0;
+                    offsetY = (rect.height - renderHeight) / 2;
+                }
+
+                // Skala konversi dari ukuran tampil ke resolusi internal (800x500)
+                const scaleX = canvas.width / renderWidth;
+                const scaleY = canvas.height / renderHeight;
 
                 let clientX, clientY;
                 if (e.touches && e.touches.length > 0) {
@@ -1151,9 +1175,13 @@
                     clientY = e.clientY;
                 }
 
+                // Hitung koordinat relatif terhadap area gambar (bukan seluruh elemen)
+                const relativeX = clientX - rect.left - offsetX;
+                const relativeY = clientY - rect.top - offsetY;
+
                 return {
-                    x: (clientX - rect.left) * scaleX,
-                    y: (clientY - rect.top) * scaleY
+                    x: relativeX * scaleX,
+                    y: relativeY * scaleY
                 };
             }
 
