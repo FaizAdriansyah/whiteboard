@@ -36,6 +36,7 @@
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             overflow: hidden;
+            position: relative;
         }
 
         /* ============ MENU UTAMA ============ */
@@ -318,6 +319,7 @@
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #444;
+            position: relative;
         }
 
         canvas {
@@ -433,6 +435,104 @@
             min-height: 12px;
         }
 
+        /* ============ FULLSCREEN MODE ============ */
+        body.fullscreen-mode {
+            padding: 0;
+            background: #ffffff;
+            align-items: stretch;
+            justify-content: flex-start;
+        }
+
+        body.fullscreen-mode .app {
+            max-width: none;
+            width: 100vw;
+            height: 100vh;
+            border-radius: 0;
+            box-shadow: none;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.fullscreen-mode .view-editor.active {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            flex-direction: column;
+        }
+
+        body.fullscreen-mode .editor-header {
+            display: none;
+        }
+
+        body.fullscreen-mode .editor-body {
+            padding: 0;
+            gap: 0;
+            height: 100%;
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        body.fullscreen-mode .whiteboard-wrapper {
+            border-radius: 0;
+            border: none;
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #ffffff;
+        }
+
+        /* Di fullscreen, kanvas menyesuaikan layar tapi tetap menjaga rasio */
+        body.fullscreen-mode canvas {
+            width: 100%;
+            height: 100%;
+            max-width: 100%;
+            max-height: 100%;
+            aspect-ratio: auto; /* biarkan flexbox mengatur */
+            object-fit: contain;
+        }
+
+        /* Sembunyikan toolbar di mode fullscreen */
+        body.fullscreen-mode .editor-toolbar {
+            display: none;
+        }
+
+        /* Floating exit button */
+        .exit-fullscreen-btn {
+            display: none;
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 1000;
+            background: rgba(30, 30, 30, 0.85);
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 50%;
+            width: 44px;
+            height: 44px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(4px);
+            transition: background 0.15s, transform 0.1s;
+        }
+
+        .exit-fullscreen-btn:hover {
+            background: rgba(60, 60, 60, 0.95);
+        }
+
+        .exit-fullscreen-btn:active {
+            transform: scale(0.9);
+        }
+
+        body.fullscreen-mode .exit-fullscreen-btn {
+            display: flex;
+        }
+
         /* ============ RESPONSIVE ============ */
         @media (max-width: 640px) {
             body {
@@ -510,7 +610,7 @@
 
             .btn-row {
                 display: grid;
-                grid-template-columns: repeat(5, 1fr);
+                grid-template-columns: repeat(6, 1fr); /* 6 tombol sekarang */
                 gap: 6px;
                 width: 100%;
             }
@@ -544,6 +644,9 @@
     </style>
 </head>
 <body>
+    <!-- Tombol keluar fullscreen (hanya muncul di mode fullscreen) -->
+    <button class="exit-fullscreen-btn" id="exitFullscreenBtn" data-tooltip="Keluar dari mode fokus">✖️</button>
+
     <div class="app">
         <!-- ============ MENU UTAMA ============ -->
         <div class="view-menu" id="viewMenu">
@@ -593,6 +696,8 @@
                     </div>
 
                     <div class="btn-row">
+                        <!-- Tombol Fullscreen ditambahkan di sini -->
+                        <button class="btn" id="fullscreenBtn" data-tooltip="Mode Fokus (Fullscreen)">⛶</button>
                         <button class="btn" id="clearBtn" data-tooltip="Bersihkan kanvas">🗑️</button>
                         <button class="btn" id="copyImgBtn" data-tooltip="Copy gambar">🖼️</button>
                         <button class="btn" id="exportJpgBtn" data-tooltip="Export JPG">💾</button>
@@ -619,6 +724,9 @@
             const newBoardName = document.getElementById('newBoardName');
             const editorTitle = document.getElementById('editorTitle');
             const statusEl = document.getElementById('status');
+            
+            const fullscreenBtn = document.getElementById('fullscreenBtn');
+            const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
 
             // === State ===
             let isDrawing = false;
@@ -727,7 +835,6 @@
                     return;
                 }
 
-                // urutkan terbaru di atas
                 const sorted = [...boards].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
                 sorted.forEach(board => {
@@ -820,7 +927,6 @@
                 const nameEl = textCol.querySelector('.board-card-name');
                 if (!nameEl) return;
 
-                // replace nameEl with input
                 const input = document.createElement('input');
                 input.type = 'text';
                 input.className = 'new-board-input';
@@ -871,8 +977,8 @@
 
             // === View switching ===
             function showMenu() {
-                // simpan papan aktif dulu
                 if (activeBoardId && dirty) persistActiveBoard();
+                exitFullscreen(); // Pastikan keluar dari fullscreen
 
                 currentView = 'menu';
                 viewEditor.classList.remove('active');
@@ -1196,6 +1302,42 @@
                 img.src = sourceDataURL;
             }
 
+            // === Fullscreen Mode ===
+            function enterFullscreen() {
+                document.body.classList.add('fullscreen-mode');
+                // Coba minta native fullscreen API (jika didukung)
+                const elem = document.documentElement;
+                if (elem.requestFullscreen) {
+                    elem.requestFullscreen().catch(err => console.log('Native fullscreen gagal:', err));
+                } else if (elem.webkitRequestFullscreen) {
+                    elem.webkitRequestFullscreen();
+                }
+            }
+
+            function exitFullscreen() {
+                document.body.classList.remove('fullscreen-mode');
+                // Keluar dari native fullscreen jika sedang aktif
+                if (document.fullscreenElement) {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen().catch(err => console.log(err));
+                    } else if (document.webkitExitFullscreen) {
+                        document.webkitExitFullscreen();
+                    }
+                }
+            }
+
+            // Sync saat user keluar native fullscreen via tombol OS / swipe
+            document.addEventListener('fullscreenchange', () => {
+                if (!document.fullscreenElement && document.body.classList.contains('fullscreen-mode')) {
+                    document.body.classList.remove('fullscreen-mode');
+                }
+            });
+            document.addEventListener('webkitfullscreenchange', () => {
+                if (!document.webkitFullscreenElement && document.body.classList.contains('fullscreen-mode')) {
+                    document.body.classList.remove('fullscreen-mode');
+                }
+            });
+
             // === Events ===
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
@@ -1267,6 +1409,10 @@
                 if (!activeBoardId) return;
                 if (persistActiveBoard()) setStatus('Disimpan');
             });
+
+            // Fullscreen buttons
+            fullscreenBtn.addEventListener('click', enterFullscreen);
+            exitFullscreenBtn.addEventListener('click', exitFullscreen);
 
             // === Init ===
             function init() {
