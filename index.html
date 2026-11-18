@@ -1,0 +1,963 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whiteboard.</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            background: #2d2d2d;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            padding: 16px;
+        }
+
+        .container {
+            background: #1e1e1e;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            display: flex;
+            gap: 16px;
+        }
+
+        .main-area {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .whiteboard-wrapper {
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        canvas {
+            display: block;
+            width: 800px;
+            height: 500px;
+            cursor: crosshair;
+            background: #ffffff;
+            touch-action: none;
+        }
+
+        .toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 16px;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            background: #2a2a2a;
+            padding: 8px 14px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3a;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 6px;
+        }
+
+        .color-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            outline: 1px solid #555;
+            outline-offset: 1px;
+        }
+
+        .color-btn:hover {
+            outline-color: #888;
+        }
+
+        .color-btn.active {
+            outline: 2px solid #ffffff;
+            outline-offset: 2px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+        }
+
+        .slider-container label {
+            color: #aaa;
+        }
+
+        input[type="range"] {
+            width: 110px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #444;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border-radius: 3px;
+            border: 1px solid #3a3a3a;
+            cursor: pointer;
+        }
+
+        .size-value {
+            min-width: 26px;
+            text-align: center;
+            background: #3a3a3a;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: #e0e0e0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .btn {
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #e0e0e0;
+            font-weight: 600;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: background 0.15s, color 0.15s;
+        }
+
+        .btn:hover {
+            background: #3a3a3a;
+        }
+
+        .btn:active {
+            background: #444;
+        }
+
+        .btn-danger {
+            color: #ff6b6b;
+        }
+
+        .btn-danger:hover {
+            color: #ff5252;
+        }
+
+        .btn-primary {
+            color: #6bb8ff;
+        }
+
+        .btn-primary:hover {
+            color: #8ac6ff;
+        }
+
+        .btn-accent {
+            color: #a8e6a3;
+        }
+
+        .btn-accent:hover {
+            color: #c0f0bb;
+        }
+
+        .btn-export {
+            color: #ffcf6b;
+        }
+
+        .btn-export:hover {
+            color: #ffdd8a;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: #252525;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 640px;
+        }
+
+        .sidebar h2 {
+            font-size: 0.85rem;
+            color: #aaa;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .board-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            overflow-y: auto;
+            flex: 1;
+            margin-bottom: 8px;
+            max-height: 420px;
+        }
+
+        .board-item {
+            background: #2f2f2f;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 8px 10px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.15s;
+            gap: 6px;
+        }
+
+        .board-item:hover {
+            background: #383838;
+        }
+
+        .board-item.active {
+            border-color: #6bb8ff;
+            background: #2f3540;
+        }
+
+        .board-name {
+            font-size: 0.82rem;
+            color: #e0e0e0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+        }
+
+        .board-item.active .board-name {
+            color: #ffffff;
+            font-weight: 500;
+        }
+
+        .board-actions {
+            display: flex;
+            gap: 2px;
+        }
+
+        .icon-btn {
+            background: transparent;
+            border: none;
+            color: #777;
+            cursor: pointer;
+            font-size: 0.95rem;
+            line-height: 1;
+            padding: 2px 5px;
+            border-radius: 3px;
+            display: none;
+            font-family: monospace;
+        }
+
+        .icon-btn:hover {
+            background: #3a3a3a;
+        }
+
+        .icon-btn.copy:hover {
+            color: #6bb8ff;
+        }
+
+        .icon-btn.export:hover {
+            color: #ffcf6b;
+        }
+
+        .icon-btn.del:hover {
+            color: #ff5252;
+        }
+
+        .board-item.active .icon-btn,
+        .board-item:hover .icon-btn {
+            display: block;
+        }
+
+        .empty-state {
+            color: #666;
+            font-size: 0.8rem;
+            text-align: center;
+            padding: 16px 0;
+            font-style: italic;
+        }
+
+        .new-board-row {
+            display: flex;
+            gap: 6px;
+        }
+
+        .new-board-input {
+            flex: 1;
+            background: #2f2f2f;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            padding: 6px 8px;
+            color: #e0e0e0;
+            font-size: 0.82rem;
+            outline: none;
+            font-family: inherit;
+            min-width: 0;
+        }
+
+        .new-board-input:focus {
+            border-color: #6bb8ff;
+        }
+
+        .new-board-input::placeholder {
+            color: #666;
+        }
+
+        .status {
+            font-size: 0.75rem;
+            color: #888;
+            text-align: center;
+            min-height: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="main-area">
+            <div class="whiteboard-wrapper">
+                <canvas id="whiteboardCanvas" width="800" height="500"></canvas>
+            </div>
+
+            <div class="toolbar">
+                <div class="tool-group">
+                    <div class="color-picker" id="colorPicker">
+                        <button class="color-btn active" data-color="#000000" style="background: #000000;" title="Hitam"></button>
+                        <button class="color-btn" data-color="#e74c3c" style="background: #e74c3c;" title="Merah"></button>
+                        <button class="color-btn" data-color="#2ecc71" style="background: #2ecc71;" title="Hijau"></button>
+                        <button class="color-btn" data-color="#3498db" style="background: #3498db;" title="Biru"></button>
+                        <button class="color-btn" data-color="#f1c40f" style="background: #f1c40f;" title="Kuning"></button>
+                        <button class="color-btn" data-color="#9b59b6" style="background: #9b59b6;" title="Ungu"></button>
+                        <button class="color-btn" data-color="#e67e22" style="background: #e67e22;" title="Oranye"></button>
+                    </div>
+
+                    <div class="slider-container">
+                        <label for="sizeSlider">Ukuran</label>
+                        <input type="range" id="sizeSlider" min="1" max="40" value="6" step="1">
+                        <span class="size-value" id="sizeValue">6</span>
+                    </div>
+                </div>
+
+                <div class="btn-row">
+                    <button class="btn btn-danger" id="clearBtn">Bersihkan</button>
+                    <button class="btn btn-accent" id="copyBoardBtn">Copy Papan</button>
+                    <button class="btn btn-primary" id="copyImgBtn">Copy Gambar</button>
+                    <button class="btn btn-export" id="exportJpgBtn">Export JPG</button>
+                    <button class="btn btn-primary" id="saveBtn">Simpan</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <h2>Papan Gambar</h2>
+            <ul class="board-list" id="boardList"></ul>
+            <div class="new-board-row">
+                <input type="text" class="new-board-input" id="newBoardName" placeholder="Nama papan baru" maxlength="30">
+                <button class="btn" id="addBoardBtn">+</button>
+            </div>
+            <div class="status" id="status"></div>
+        </div>
+    </div>
+
+    <script>
+        (function() {
+            const STORAGE_KEY = 'whiteboard_app_v1';
+
+            const canvas = document.getElementById('whiteboardCanvas');
+            const ctx = canvas.getContext('2d');
+            const boardList = document.getElementById('boardList');
+            const newBoardName = document.getElementById('newBoardName');
+            const statusEl = document.getElementById('status');
+
+            // === State ===
+            let isDrawing = false;
+            let lastX = 0;
+            let lastY = 0;
+            let currentColor = '#000000';
+            let currentSize = 6;
+            let boards = [];
+            let activeBoardId = null;
+            let dirty = false;
+
+            // === Helper localStorage ===
+            function loadFromStorage() {
+                try {
+                    const raw = localStorage.getItem(STORAGE_KEY);
+                    if (!raw) return { boards: [], activeBoardId: null };
+                    const parsed = JSON.parse(raw);
+                    return {
+                        boards: Array.isArray(parsed.boards) ? parsed.boards : [],
+                        activeBoardId: parsed.activeBoardId || null
+                    };
+                } catch (err) {
+                    console.error('Gagal memuat localStorage:', err);
+                    return { boards: [], activeBoardId: null };
+                }
+            }
+
+            function saveToStorage() {
+                try {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+                        boards,
+                        activeBoardId
+                    }));
+                    return true;
+                } catch (err) {
+                    console.error('Gagal menyimpan:', err);
+                    setStatus('Gagal menyimpan: ' + err.name);
+                    return false;
+                }
+            }
+
+            // === Status ===
+            function setStatus(msg) {
+                statusEl.textContent = msg;
+                if (msg) {
+                    clearTimeout(setStatus._t);
+                    setStatus._t = setTimeout(() => { statusEl.textContent = ''; }, 2200);
+                }
+            }
+
+            // === Canvas ===
+            function fillWhite() {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            function clearCanvas() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                fillWhite();
+            }
+
+            function loadImageToCanvas(dataURL) {
+                if (!dataURL) {
+                    clearCanvas();
+                    return;
+                }
+                const img = new Image();
+                img.onload = () => {
+                    clearCanvas();
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                };
+                img.onerror = () => clearCanvas();
+                img.src = dataURL;
+            }
+
+            function getCanvasDataURL() {
+                return canvas.toDataURL('image/png');
+            }
+
+            // === Papan ===
+            function uid() {
+                return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+            }
+
+            function getActiveBoard() {
+                return boards.find(b => b.id === activeBoardId) || null;
+            }
+
+            function renderBoardList() {
+                boardList.innerHTML = '';
+
+                if (boards.length === 0) {
+                    const li = document.createElement('li');
+                    li.className = 'empty-state';
+                    li.textContent = 'Belum ada papan.';
+                    boardList.appendChild(li);
+                    return;
+                }
+
+                boards.forEach(board => {
+                    const li = document.createElement('li');
+                    li.className = 'board-item' + (board.id === activeBoardId ? ' active' : '');
+
+                    const nameSpan = document.createElement('span');
+                    nameSpan.className = 'board-name';
+                    nameSpan.textContent = board.name;
+                    nameSpan.title = board.name;
+                    li.appendChild(nameSpan);
+
+                    const actions = document.createElement('div');
+                    actions.className = 'board-actions';
+
+                    // duplikat
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'icon-btn copy';
+                    copyBtn.title = 'Duplikat papan ini';
+                    copyBtn.textContent = '\u2398';
+                    copyBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        duplicateBoard(board.id);
+                    });
+                    actions.appendChild(copyBtn);
+
+                    // export JPG
+                    const exportBtn = document.createElement('button');
+                    exportBtn.className = 'icon-btn export';
+                    exportBtn.title = 'Export papan ini ke JPG';
+                    exportBtn.textContent = '\u21E5'; // ⇥ (arrow)
+                    exportBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        exportBoardToJPG(board.id);
+                    });
+                    actions.appendChild(exportBtn);
+
+                    // hapus
+                    const delBtn = document.createElement('button');
+                    delBtn.className = 'icon-btn del';
+                    delBtn.title = 'Hapus papan';
+                    delBtn.textContent = '\u00D7';
+                    delBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteBoard(board.id);
+                    });
+                    actions.appendChild(delBtn);
+
+                    li.appendChild(actions);
+                    li.addEventListener('click', () => switchBoard(board.id));
+                    boardList.appendChild(li);
+                });
+            }
+
+            function persistActiveBoard() {
+                const board = getActiveBoard();
+                if (!board) return false;
+                board.dataURL = getCanvasDataURL();
+                board.updatedAt = Date.now();
+                return saveToStorage();
+            }
+
+            function switchBoard(id) {
+                if (id === activeBoardId) return;
+                if (activeBoardId) persistActiveBoard();
+
+                activeBoardId = id;
+                const board = getActiveBoard();
+                loadImageToCanvas(board ? board.dataURL : null);
+                saveToStorage();
+                renderBoardList();
+                setStatus('Papan dibuka');
+            }
+
+            function createBoard(name) {
+                if (activeBoardId) persistActiveBoard();
+
+                const newBoard = {
+                    id: uid(),
+                    name: name || 'Papan ' + (boards.length + 1),
+                    dataURL: null,
+                    updatedAt: Date.now()
+                };
+                boards.push(newBoard);
+                activeBoardId = newBoard.id;
+                clearCanvas();
+                saveToStorage();
+                renderBoardList();
+                setStatus('Papan dibuat');
+            }
+
+            function deleteBoard(id) {
+                const idx = boards.findIndex(b => b.id === id);
+                if (idx === -1) return;
+                if (boards.length === 1) {
+                    if (!confirm('Hapus papan terakhir? Kanvas akan dikosongkan.')) return;
+                }
+
+                boards.splice(idx, 1);
+
+                if (activeBoardId === id) {
+                    activeBoardId = boards.length > 0 ? boards[0].id : null;
+                    if (activeBoardId) {
+                        const b = getActiveBoard();
+                        loadImageToCanvas(b.dataURL);
+                    } else {
+                        clearCanvas();
+                    }
+                }
+
+                saveToStorage();
+                renderBoardList();
+                setStatus('Papan dihapus');
+            }
+
+            // === Duplikat papan ===
+            function duplicateBoard(sourceId) {
+                const source = boards.find(b => b.id === sourceId);
+                if (!source) return;
+
+                if (sourceId === activeBoardId) {
+                    source.dataURL = getCanvasDataURL();
+                }
+
+                let baseName = source.name.replace(/\s*\(copy( \d+)?\)$/i, '');
+                let candidate = baseName + ' (copy)';
+                let counter = 2;
+                while (boards.some(b => b.name === candidate)) {
+                    candidate = baseName + ' (copy ' + counter + ')';
+                    counter++;
+                }
+
+                const newBoard = {
+                    id: uid(),
+                    name: candidate,
+                    dataURL: source.dataURL || null,
+                    updatedAt: Date.now()
+                };
+
+                const idx = boards.findIndex(b => b.id === sourceId);
+                boards.splice(idx + 1, 0, newBoard);
+
+                saveToStorage();
+                renderBoardList();
+                setStatus('Papan diduplikat');
+            }
+
+            // === Salin gambar ke clipboard ===
+            async function copyImageToClipboard() {
+                if (!activeBoardId) {
+                    setStatus('Tidak ada papan aktif');
+                    return;
+                }
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) {
+                        setStatus('Gagal membuat gambar');
+                        return;
+                    }
+
+                    if (navigator.clipboard && window.ClipboardItem) {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            setStatus('Gambar disalin ke clipboard');
+                            return;
+                        } catch (err) {
+                            console.warn('Clipboard API gagal:', err);
+                        }
+                    }
+
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = (getActiveBoard()?.name || 'whiteboard') + '.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    setStatus('Clipboard tidak didukung, gambar diunduh');
+                }, 'image/png');
+            }
+
+            // === FITUR EXPORT KE JPG ===
+            // Buat gambar JPG dengan latar putih (JPEG tidak mendukung transparansi).
+            // Parameter boardId opsional; default papan aktif.
+            function exportBoardToJPG(boardId) {
+                const targetId = boardId || activeBoardId;
+                if (!targetId) {
+                    setStatus('Tidak ada papan aktif');
+                    return;
+                }
+
+                const board = boards.find(b => b.id === targetId);
+                if (!board) {
+                    setStatus('Papan tidak ditemukan');
+                    return;
+                }
+
+                // Pastikan data papan aktif yang diekspor adalah versi terbaru
+                let sourceDataURL;
+                if (targetId === activeBoardId) {
+                    sourceDataURL = getCanvasDataURL();
+                } else {
+                    sourceDataURL = board.dataURL;
+                }
+
+                // Papan kosong / belum pernah digambar
+                if (!sourceDataURL) {
+                    if (!confirm('Papan "' + board.name + '" kosong. Tetap export sebagai JPG putih?')) {
+                        return;
+                    }
+                }
+
+                // Siapkan kanvas offscreen dengan latar putih
+                const offscreen = document.createElement('canvas');
+                offscreen.width = canvas.width;
+                offscreen.height = canvas.height;
+                const octx = offscreen.getContext('2d');
+
+                // Isi putih dulu (JPG tidak punya transparansi)
+                octx.fillStyle = '#ffffff';
+                octx.fillRect(0, 0, offscreen.width, offscreen.height);
+
+                function finishExport() {
+                    // Kualitas 0.92 — kompromi bagus antara ukuran file & ketajaman
+                    const jpgURL = offscreen.toDataURL('image/jpeg', 0.92);
+
+                    // Sanitasi nama file
+                    const safeName = (board.name || 'whiteboard')
+                        .replace(/[^\w\s\-\.]/g, '')
+                        .replace(/\s+/g, '_')
+                        .trim() || 'whiteboard';
+
+                    const fileName = safeName + '.jpg';
+
+                    const a = document.createElement('a');
+                    a.href = jpgURL;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+
+                    setStatus('Diekspor: ' + fileName);
+                }
+
+                if (!sourceDataURL) {
+                    // papan kosong -> langsung export putih
+                    finishExport();
+                    return;
+                }
+
+                const img = new Image();
+                img.onload = () => {
+                    octx.drawImage(img, 0, 0, offscreen.width, offscreen.height);
+                    finishExport();
+                };
+                img.onerror = () => {
+                    setStatus('Gagal memuat gambar papan');
+                };
+                img.src = sourceDataURL;
+            }
+
+            // === Gambar ===
+            function getCoordinates(e) {
+                const rect = canvas.getBoundingClientRect();
+                const scaleX = canvas.width / rect.width;
+                const scaleY = canvas.height / rect.height;
+
+                let clientX, clientY;
+                if (e.touches && e.touches.length > 0) {
+                    clientX = e.touches[0].clientX;
+                    clientY = e.touches[0].clientY;
+                } else {
+                    clientX = e.clientX;
+                    clientY = e.clientY;
+                }
+
+                return {
+                    x: (clientX - rect.left) * scaleX,
+                    y: (clientY - rect.top) * scaleY
+                };
+            }
+
+            function startDrawing(e) {
+                e.preventDefault();
+                if (!activeBoardId) {
+                    setStatus('Buat papan dulu');
+                    return;
+                }
+                const { x, y } = getCoordinates(e);
+                isDrawing = true;
+                lastX = x;
+                lastY = y;
+                dirty = true;
+
+                ctx.beginPath();
+                ctx.arc(lastX, lastY, currentSize / 2, 0, Math.PI * 2);
+                ctx.fillStyle = currentColor;
+                ctx.fill();
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+            }
+
+            function draw(e) {
+                e.preventDefault();
+                if (!isDrawing) return;
+
+                const { x, y } = getCoordinates(e);
+
+                ctx.strokeStyle = currentColor;
+                ctx.lineWidth = currentSize;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+
+                ctx.beginPath();
+                ctx.moveTo(lastX, lastY);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+
+                lastX = x;
+                lastY = y;
+            }
+
+            function stopDrawing(e) {
+                if (e) e.preventDefault();
+                isDrawing = false;
+            }
+
+            // === Auto-save ===
+            let autoSaveTimer = null;
+            function scheduleAutoSave() {
+                if (!activeBoardId) return;
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(() => {
+                    if (activeBoardId) {
+                        persistActiveBoard();
+                        setStatus('Tersimpan otomatis');
+                    }
+                }, 800);
+            }
+
+            // === Events: Canvas ===
+            canvas.addEventListener('mousedown', startDrawing);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', () => { stopDrawing(); scheduleAutoSave(); });
+            canvas.addEventListener('mouseleave', stopDrawing);
+
+            canvas.addEventListener('touchstart', startDrawing, { passive: false });
+            canvas.addEventListener('touchmove', draw, { passive: false });
+            canvas.addEventListener('touchend', () => { stopDrawing(); scheduleAutoSave(); });
+            canvas.addEventListener('touchcancel', stopDrawing);
+
+            canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            // === Events: warna ===
+            const colorButtons = document.querySelectorAll('.color-btn');
+            colorButtons.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    colorButtons.forEach(b => b.classList.remove('active'));
+                    btn.classList.add('active');
+                    currentColor = btn.dataset.color;
+                });
+            });
+
+            // === Events: slider ===
+            const sizeSlider = document.getElementById('sizeSlider');
+            const sizeValue = document.getElementById('sizeValue');
+            sizeSlider.addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                currentSize = val;
+                sizeValue.textContent = val;
+            });
+
+            // === Events: tombol ===
+            document.getElementById('clearBtn').addEventListener('click', () => {
+                if (!activeBoardId) return;
+                if (!confirm('Hapus semua coretan di papan ini?')) return;
+                clearCanvas();
+                persistActiveBoard();
+                setStatus('Papan dibersihkan');
+            });
+
+            document.getElementById('copyBoardBtn').addEventListener('click', () => {
+                if (!activeBoardId) {
+                    setStatus('Tidak ada papan aktif');
+                    return;
+                }
+                duplicateBoard(activeBoardId);
+            });
+
+            document.getElementById('copyImgBtn').addEventListener('click', copyImageToClipboard);
+
+            document.getElementById('exportJpgBtn').addEventListener('click', () => exportBoardToJPG(activeBoardId));
+
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                if (!activeBoardId) {
+                    setStatus('Tidak ada papan aktif');
+                    return;
+                }
+                if (persistActiveBoard()) {
+                    setStatus('Disimpan');
+                    renderBoardList();
+                }
+            });
+
+            document.getElementById('addBoardBtn').addEventListener('click', () => {
+                const name = newBoardName.value.trim();
+                if (!name) {
+                    newBoardName.focus();
+                    return;
+                }
+                createBoard(name);
+                newBoardName.value = '';
+            });
+
+            newBoardName.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    document.getElementById('addBoardBtn').click();
+                }
+            });
+
+            // === Inisialisasi ===
+            function init() {
+                const stored = loadFromStorage();
+                boards = stored.boards;
+                activeBoardId = stored.activeBoardId;
+
+                if (activeBoardId && !boards.find(b => b.id === activeBoardId)) {
+                    activeBoardId = boards.length > 0 ? boards[0].id : null;
+                }
+
+                if (boards.length === 0) {
+                    const b = { id: uid(), name: 'Papan 1', dataURL: null, updatedAt: Date.now() };
+                    boards.push(b);
+                    activeBoardId = b.id;
+                    saveToStorage();
+                }
+
+                const active = getActiveBoard();
+                if (active && active.dataURL) {
+                    loadImageToCanvas(active.dataURL);
+                } else {
+                    fillWhite();
+                }
+
+                renderBoardList();
+
+                window.addEventListener('beforeunload', () => {
+                    if (activeBoardId && dirty) {
+                        persistActiveBoard();
+                    }
+                });
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
