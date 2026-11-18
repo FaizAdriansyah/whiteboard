@@ -155,7 +155,6 @@
             font-variant-numeric: tabular-nums;
         }
 
-        /* === Tombol emoji === */
         .btn {
             background: #2a2a2a;
             border: 1px solid #3a3a3a;
@@ -404,6 +403,21 @@
             min-height: 14px;
         }
 
+        /* === Rename inline === */
+        .rename-input {
+            flex: 1;
+            background: #1e1e1e;
+            border: 1px solid #6bb8ff;
+            border-radius: 4px;
+            padding: 4px 8px;
+            color: #ffffff;
+            font-size: 0.85rem;
+            outline: none;
+            font-family: inherit;
+            min-width: 0;
+            min-height: 28px;
+        }
+
         /* ============ RESPONSIVE ============ */
 
         @media (max-width: 1100px) {
@@ -543,7 +557,6 @@
             }
         }
 
-        /* Layar sentuh: semua tombol sidebar selalu terlihat */
         @media (hover: none) and (pointer: coarse) {
             .icon-btn {
                 display: block;
@@ -607,6 +620,7 @@
     <script>
         (function() {
             const STORAGE_KEY = 'whiteboard_app_v1';
+            const MAX_NAME_LENGTH = 30;
 
             const canvas = document.getElementById('whiteboardCanvas');
             const ctx = canvas.getContext('2d');
@@ -627,7 +641,7 @@
             let activeBoardId = null;
             let dirty = false;
 
-            // === Responsif: sidebar collapse di layar kecil ===
+            // === Responsif ===
             function isMobileView() {
                 return window.matchMedia('(max-width: 1100px)').matches;
             }
@@ -636,7 +650,6 @@
                 if (isMobileView()) {
                     if (!sidebar.dataset.userToggled) {
                         sidebar.classList.add('collapsed');
-                        sidebarToggle.textContent = '☰';
                     }
                 } else {
                     sidebar.classList.remove('collapsed');
@@ -646,8 +659,7 @@
             sidebarHeader.addEventListener('click', (e) => {
                 if (!isMobileView()) return;
                 if (e.target.closest('button') && e.target !== sidebarToggle) return;
-
-                const collapsed = sidebar.classList.toggle('collapsed');
+                sidebar.classList.toggle('collapsed');
                 sidebar.dataset.userToggled = '1';
             });
 
@@ -678,10 +690,7 @@
 
             function saveToStorage() {
                 try {
-                    localStorage.setItem(STORAGE_KEY, JSON.stringify({
-                        boards,
-                        activeBoardId
-                    }));
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify({ boards, activeBoardId }));
                     return true;
                 } catch (err) {
                     console.error('Gagal menyimpan:', err);
@@ -690,7 +699,6 @@
                 }
             }
 
-            // === Status ===
             function setStatus(msg) {
                 statusEl.textContent = msg;
                 if (msg) {
@@ -751,15 +759,34 @@
                 boards.forEach(board => {
                     const li = document.createElement('li');
                     li.className = 'board-item' + (board.id === activeBoardId ? ' active' : '');
+                    li.dataset.boardId = board.id;
 
                     const nameSpan = document.createElement('span');
                     nameSpan.className = 'board-name';
                     nameSpan.textContent = board.name;
                     nameSpan.title = board.name;
+
+                    // Double-click (desktop) atau long-press-friendly: klik nama untuk rename
+                    nameSpan.addEventListener('dblclick', (e) => {
+                        e.stopPropagation();
+                        startRenameBoard(board.id, li);
+                    });
+
                     li.appendChild(nameSpan);
 
                     const actions = document.createElement('div');
                     actions.className = 'board-actions';
+
+                    // tombol rename
+                    const renameBtn = document.createElement('button');
+                    renameBtn.className = 'icon-btn rename';
+                    renameBtn.setAttribute('data-tooltip', 'Rename papan');
+                    renameBtn.textContent = '✏️';
+                    renameBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        startRenameBoard(board.id, li);
+                    });
+                    actions.appendChild(renameBtn);
 
                     const copyBtn = document.createElement('button');
                     copyBtn.className = 'icon-btn copy';
@@ -795,6 +822,81 @@
                     li.addEventListener('click', () => switchBoard(board.id));
                     boardList.appendChild(li);
                 });
+            }
+
+            // === RENAME ===
+            // Ubah nama papan secara inline
+            function startRenameBoard(boardId, liElement) {
+                const board = boards.find(b => b.id === boardId);
+                if (!board) return;
+
+                // Cegah rename ganda
+                if (liElement.querySelector('.rename-input')) return;
+
+                const nameSpan = liElement.querySelector('.board-name');
+                if (!nameSpan) return;
+
+                // Sembunyikan span, buat input
+                nameSpan.style.display = 'none';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.className = 'rename-input';
+                input.value = board.name;
+                input.maxLength = MAX_NAME_LENGTH;
+
+                liElement.insertBefore(input, nameSpan);
+                input.focus();
+                input.select();
+
+                let cancelled = false;
+
+                function finishRename(save) {
+                    if (cancelled) return;
+                    cancelled = true;
+
+                    const newName = input.value.trim();
+
+                    if (save && newName && newName !== board.name) {
+                        // Cek nama duplikat
+                        const isDuplicate = boards.some(b => b.id !== boardId && b.name === newName);
+                        if (isDuplicate) {
+                            setStatus('Nama sudah dipakai papan lain');
+                            // batalkan, kembalikan tampilan
+                            input.remove();
+                            nameSpan.style.display = '';
+                            return;
+                        }
+
+                        board.name = newName;
+                        board.updatedAt = Date.now();
+                        saveToStorage();
+                        setStatus('Nama diubah');
+                    }
+
+                    input.remove();
+                    nameSpan.style.display = '';
+                    renderBoardList();
+                }
+
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        finishRename(true);
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        finishRename(false);
+                    }
+                });
+
+                input.addEventListener('blur', () => {
+                    // beri jeda kecil agar Enter tidak memicu blur ganda
+                    setTimeout(() => finishRename(true), 100);
+                });
+
+                // Cegah klik pada input memicu switchBoard
+                input.addEventListener('click', (e) => e.stopPropagation());
+                input.addEventListener('mousedown', (e) => e.stopPropagation());
             }
 
             function persistActiveBoard() {
@@ -1112,83 +1214,4 @@
                 if (!confirm('Hapus semua coretan di papan ini?')) return;
                 clearCanvas();
                 persistActiveBoard();
-                setStatus('Papan dibersihkan');
-            });
-
-            document.getElementById('copyBoardBtn').addEventListener('click', () => {
-                if (!activeBoardId) {
-                    setStatus('Tidak ada papan aktif');
-                    return;
-                }
-                duplicateBoard(activeBoardId);
-            });
-
-            document.getElementById('copyImgBtn').addEventListener('click', copyImageToClipboard);
-
-            document.getElementById('exportJpgBtn').addEventListener('click', () => exportBoardToJPG(activeBoardId));
-
-            document.getElementById('saveBtn').addEventListener('click', () => {
-                if (!activeBoardId) {
-                    setStatus('Tidak ada papan aktif');
-                    return;
-                }
-                if (persistActiveBoard()) {
-                    setStatus('Disimpan');
-                    renderBoardList();
-                }
-            });
-
-            document.getElementById('addBoardBtn').addEventListener('click', () => {
-                const name = newBoardName.value.trim();
-                if (!name) {
-                    newBoardName.focus();
-                    return;
-                }
-                createBoard(name);
-                newBoardName.value = '';
-            });
-
-            newBoardName.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    document.getElementById('addBoardBtn').click();
-                }
-            });
-
-            function init() {
-                const stored = loadFromStorage();
-                boards = stored.boards;
-                activeBoardId = stored.activeBoardId;
-
-                if (activeBoardId && !boards.find(b => b.id === activeBoardId)) {
-                    activeBoardId = boards.length > 0 ? boards[0].id : null;
-                }
-
-                if (boards.length === 0) {
-                    const b = { id: uid(), name: 'Papan 1', dataURL: null, updatedAt: Date.now() };
-                    boards.push(b);
-                    activeBoardId = b.id;
-                    saveToStorage();
-                }
-
-                const active = getActiveBoard();
-                if (active && active.dataURL) {
-                    loadImageToCanvas(active.dataURL);
-                } else {
-                    fillWhite();
-                }
-
-                renderBoardList();
-                updateSidebarCollapse();
-
-                window.addEventListener('beforeunload', () => {
-                    if (activeBoardId && dirty) {
-                        persistActiveBoard();
-                    }
-                });
-            }
-
-            init();
-        })();
-    </script>
-</body>
-</html>
+                setStatus('
