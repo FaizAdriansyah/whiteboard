@@ -2,14 +2,20 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whiteboard.</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1e1e1e">
+    <title>Whiteboard dengan LocalStorage</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
             user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html, body {
+            height: 100%;
         }
 
         body {
@@ -20,6 +26,7 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Roboto, sans-serif;
             padding: 16px;
+            overscroll-behavior: none;
         }
 
         .container {
@@ -29,11 +36,14 @@
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
             display: flex;
             gap: 16px;
+            max-width: 100%;
         }
 
         .main-area {
             display: flex;
             flex-direction: column;
+            min-width: 0;
+            flex: 1;
         }
 
         .whiteboard-wrapper {
@@ -41,15 +51,19 @@
             border-radius: 8px;
             overflow: hidden;
             border: 1px solid #444;
+            position: relative;
         }
 
         canvas {
             display: block;
-            width: 800px;
-            height: 500px;
+            width: 100%;
+            max-width: 800px;
+            aspect-ratio: 8 / 5;
+            height: auto;
             cursor: crosshair;
             background: #ffffff;
             touch-action: none;
+            -webkit-user-select: none;
         }
 
         .toolbar {
@@ -69,6 +83,7 @@
             padding: 8px 14px;
             border-radius: 8px;
             border: 1px solid #3a3a3a;
+            flex-wrap: wrap;
         }
 
         .color-picker {
@@ -77,13 +92,14 @@
         }
 
         .color-btn {
-            width: 26px;
-            height: 26px;
+            width: 30px;
+            height: 30px;
             border: none;
             border-radius: 4px;
             cursor: pointer;
             outline: 1px solid #555;
             outline-offset: 1px;
+            flex-shrink: 0;
         }
 
         .color-btn:hover {
@@ -101,6 +117,7 @@
             gap: 8px;
             color: #e0e0e0;
             font-size: 0.85rem;
+            flex-shrink: 0;
         }
 
         .slider-container label {
@@ -119,10 +136,10 @@
 
         input[type="range"]::-webkit-slider-thumb {
             -webkit-appearance: none;
-            width: 14px;
-            height: 14px;
+            width: 20px;
+            height: 20px;
             background: #ffffff;
-            border-radius: 3px;
+            border-radius: 50%;
             border: 1px solid #3a3a3a;
             cursor: pointer;
         }
@@ -131,23 +148,31 @@
             min-width: 26px;
             text-align: center;
             background: #3a3a3a;
-            padding: 3px 6px;
+            padding: 4px 6px;
             border-radius: 4px;
             font-size: 0.8rem;
             color: #e0e0e0;
             font-variant-numeric: tabular-nums;
         }
 
+        /* === Tombol emoji === */
         .btn {
             background: #2a2a2a;
             border: 1px solid #3a3a3a;
             color: #e0e0e0;
             font-weight: 600;
-            padding: 8px 16px;
+            padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 0.85rem;
-            transition: background 0.15s, color 0.15s;
+            font-size: 1.15rem;
+            transition: background 0.15s, color 0.15s, transform 0.1s;
+            min-height: 42px;
+            min-width: 42px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            line-height: 1;
         }
 
         .btn:hover {
@@ -156,38 +181,32 @@
 
         .btn:active {
             background: #444;
+            transform: scale(0.95);
         }
 
-        .btn-danger {
-            color: #ff6b6b;
+        .btn:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%);
+            background: #000;
+            color: #fff;
+            font-size: 0.72rem;
+            font-weight: 500;
+            padding: 5px 9px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 20;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            animation: tooltipFadeIn 0.15s ease-out forwards;
+            letter-spacing: 0.2px;
         }
 
-        .btn-danger:hover {
-            color: #ff5252;
-        }
-
-        .btn-primary {
-            color: #6bb8ff;
-        }
-
-        .btn-primary:hover {
-            color: #8ac6ff;
-        }
-
-        .btn-accent {
-            color: #a8e6a3;
-        }
-
-        .btn-accent:hover {
-            color: #c0f0bb;
-        }
-
-        .btn-export {
-            color: #ffcf6b;
-        }
-
-        .btn-export:hover {
-            color: #ffdd8a;
+        @keyframes tooltipFadeIn {
+            to { opacity: 1; }
         }
 
         .btn-row {
@@ -207,6 +226,13 @@
             flex-direction: column;
             gap: 10px;
             max-height: 640px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         .sidebar h2 {
@@ -215,7 +241,27 @@
             font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 4px;
+        }
+
+        .sidebar-toggle {
+            display: none;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            color: #e0e0e0;
+            border-radius: 4px;
+            cursor: pointer;
+            padding: 4px 10px;
+            font-size: 1rem;
+            min-height: 32px;
+            min-width: 32px;
+        }
+
+        .sidebar-content {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
         }
 
         .board-list {
@@ -227,19 +273,21 @@
             flex: 1;
             margin-bottom: 8px;
             max-height: 420px;
+            min-height: 40px;
         }
 
         .board-item {
             background: #2f2f2f;
             border: 1px solid #3a3a3a;
             border-radius: 6px;
-            padding: 8px 10px;
+            padding: 10px 10px;
             cursor: pointer;
             display: flex;
             justify-content: space-between;
             align-items: center;
             transition: background 0.15s;
             gap: 6px;
+            min-height: 44px;
         }
 
         .board-item:hover {
@@ -252,7 +300,7 @@
         }
 
         .board-name {
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             color: #e0e0e0;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -273,30 +321,40 @@
         .icon-btn {
             background: transparent;
             border: none;
-            color: #777;
+            color: #999;
             cursor: pointer;
-            font-size: 0.95rem;
+            font-size: 1rem;
             line-height: 1;
-            padding: 2px 5px;
-            border-radius: 3px;
+            padding: 6px 8px;
+            border-radius: 4px;
             display: none;
-            font-family: monospace;
+            min-width: 32px;
+            min-height: 32px;
+            position: relative;
         }
 
         .icon-btn:hover {
             background: #3a3a3a;
+            color: #fff;
         }
 
-        .icon-btn.copy:hover {
-            color: #6bb8ff;
-        }
-
-        .icon-btn.export:hover {
-            color: #ffcf6b;
-        }
-
-        .icon-btn.del:hover {
-            color: #ff5252;
+        .icon-btn:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: calc(100% + 6px);
+            right: 0;
+            background: #000;
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 500;
+            padding: 4px 8px;
+            border-radius: 4px;
+            white-space: nowrap;
+            pointer-events: none;
+            z-index: 20;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
+            opacity: 0;
+            animation: tooltipFadeIn 0.15s ease-out forwards;
         }
 
         .board-item.active .icon-btn,
@@ -322,12 +380,13 @@
             background: #2f2f2f;
             border: 1px solid #3a3a3a;
             border-radius: 4px;
-            padding: 6px 8px;
+            padding: 8px 10px;
             color: #e0e0e0;
-            font-size: 0.82rem;
+            font-size: 0.85rem;
             outline: none;
             font-family: inherit;
             min-width: 0;
+            min-height: 42px;
         }
 
         .new-board-input:focus {
@@ -343,6 +402,153 @@
             color: #888;
             text-align: center;
             min-height: 14px;
+        }
+
+        /* ============ RESPONSIVE ============ */
+
+        @media (max-width: 1100px) {
+            .container {
+                flex-direction: column;
+                gap: 12px;
+                width: 100%;
+                max-width: 820px;
+            }
+
+            .main-area {
+                width: 100%;
+            }
+
+            canvas {
+                max-width: 100%;
+            }
+
+            .sidebar {
+                width: 100%;
+                max-height: none;
+            }
+
+            .sidebar-header {
+                cursor: pointer;
+            }
+
+            .sidebar-toggle {
+                display: block;
+            }
+
+            .sidebar.collapsed .sidebar-content {
+                display: none;
+            }
+
+            .board-list {
+                max-height: 180px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            body {
+                padding: 8px;
+                align-items: flex-start;
+            }
+
+            .container {
+                padding: 10px;
+                border-radius: 8px;
+                gap: 10px;
+            }
+
+            .whiteboard-wrapper {
+                border-radius: 6px;
+            }
+
+            .toolbar {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 10px;
+                margin-top: 10px;
+            }
+
+            .tool-group {
+                width: 100%;
+                justify-content: space-between;
+                padding: 6px 10px;
+                gap: 10px;
+            }
+
+            .color-picker {
+                gap: 5px;
+                flex-wrap: wrap;
+            }
+
+            .color-btn {
+                width: 28px;
+                height: 28px;
+            }
+
+            .slider-container {
+                flex: 1;
+                justify-content: flex-end;
+            }
+
+            input[type="range"] {
+                width: 100px;
+            }
+
+            .btn-row {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 6px;
+            }
+
+            .btn {
+                padding: 8px;
+                font-size: 1.1rem;
+                width: 100%;
+            }
+
+            .sidebar {
+                padding: 10px;
+            }
+
+            .sidebar h2 {
+                font-size: 0.78rem;
+            }
+
+            .board-name {
+                font-size: 0.8rem;
+            }
+
+            .icon-btn {
+                display: block;
+                color: #888;
+            }
+
+            .board-list {
+                max-height: 150px;
+            }
+        }
+
+        @media (max-width: 380px) {
+            .btn-row {
+                grid-template-columns: repeat(3, 1fr);
+            }
+
+            .color-btn {
+                width: 24px;
+                height: 24px;
+            }
+
+            .slider-container label {
+                display: none;
+            }
+        }
+
+        /* Layar sentuh: semua tombol sidebar selalu terlihat */
+        @media (hover: none) and (pointer: coarse) {
+            .icon-btn {
+                display: block;
+                color: #888;
+            }
         }
     </style>
 </head>
@@ -373,23 +579,28 @@
                 </div>
 
                 <div class="btn-row">
-                    <button class="btn btn-danger" id="clearBtn">Bersihkan</button>
-                    <button class="btn btn-accent" id="copyBoardBtn">Copy Papan</button>
-                    <button class="btn btn-primary" id="copyImgBtn">Copy Gambar</button>
-                    <button class="btn btn-export" id="exportJpgBtn">Export JPG</button>
-                    <button class="btn btn-primary" id="saveBtn">Simpan</button>
+                    <button class="btn" id="clearBtn" data-tooltip="Bersihkan kanvas">🗑️</button>
+                    <button class="btn" id="copyBoardBtn" data-tooltip="Copy papan (duplikat)">📋</button>
+                    <button class="btn" id="copyImgBtn" data-tooltip="Copy gambar ke clipboard">🖼️</button>
+                    <button class="btn" id="exportJpgBtn" data-tooltip="Export ke JPG">💾</button>
+                    <button class="btn" id="saveBtn" data-tooltip="Simpan manual">💿</button>
                 </div>
             </div>
         </div>
 
-        <div class="sidebar">
-            <h2>Papan Gambar</h2>
-            <ul class="board-list" id="boardList"></ul>
-            <div class="new-board-row">
-                <input type="text" class="new-board-input" id="newBoardName" placeholder="Nama papan baru" maxlength="30">
-                <button class="btn" id="addBoardBtn">+</button>
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header" id="sidebarHeader">
+                <h2>Papan Gambar</h2>
+                <button class="sidebar-toggle" id="sidebarToggle" data-tooltip="Tampilkan/sembunyikan">☰</button>
             </div>
-            <div class="status" id="status"></div>
+            <div class="sidebar-content" id="sidebarContent">
+                <ul class="board-list" id="boardList"></ul>
+                <div class="new-board-row">
+                    <input type="text" class="new-board-input" id="newBoardName" placeholder="Nama papan baru" maxlength="30">
+                    <button class="btn" id="addBoardBtn" data-tooltip="Buat papan baru">➕</button>
+                </div>
+                <div class="status" id="status"></div>
+            </div>
         </div>
     </div>
 
@@ -402,6 +613,9 @@
             const boardList = document.getElementById('boardList');
             const newBoardName = document.getElementById('newBoardName');
             const statusEl = document.getElementById('status');
+            const sidebar = document.getElementById('sidebar');
+            const sidebarHeader = document.getElementById('sidebarHeader');
+            const sidebarToggle = document.getElementById('sidebarToggle');
 
             // === State ===
             let isDrawing = false;
@@ -412,6 +626,39 @@
             let boards = [];
             let activeBoardId = null;
             let dirty = false;
+
+            // === Responsif: sidebar collapse di layar kecil ===
+            function isMobileView() {
+                return window.matchMedia('(max-width: 1100px)').matches;
+            }
+
+            function updateSidebarCollapse() {
+                if (isMobileView()) {
+                    if (!sidebar.dataset.userToggled) {
+                        sidebar.classList.add('collapsed');
+                        sidebarToggle.textContent = '☰';
+                    }
+                } else {
+                    sidebar.classList.remove('collapsed');
+                }
+            }
+
+            sidebarHeader.addEventListener('click', (e) => {
+                if (!isMobileView()) return;
+                if (e.target.closest('button') && e.target !== sidebarToggle) return;
+
+                const collapsed = sidebar.classList.toggle('collapsed');
+                sidebar.dataset.userToggled = '1';
+            });
+
+            sidebarToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (!isMobileView()) return;
+                sidebar.classList.toggle('collapsed');
+                sidebar.dataset.userToggled = '1';
+            });
+
+            window.addEventListener('resize', updateSidebarCollapse);
 
             // === Helper localStorage ===
             function loadFromStorage() {
@@ -514,33 +761,30 @@
                     const actions = document.createElement('div');
                     actions.className = 'board-actions';
 
-                    // duplikat
                     const copyBtn = document.createElement('button');
                     copyBtn.className = 'icon-btn copy';
-                    copyBtn.title = 'Duplikat papan ini';
-                    copyBtn.textContent = '\u2398';
+                    copyBtn.setAttribute('data-tooltip', 'Duplikat papan');
+                    copyBtn.textContent = '📋';
                     copyBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         duplicateBoard(board.id);
                     });
                     actions.appendChild(copyBtn);
 
-                    // export JPG
                     const exportBtn = document.createElement('button');
                     exportBtn.className = 'icon-btn export';
-                    exportBtn.title = 'Export papan ini ke JPG';
-                    exportBtn.textContent = '\u21E5'; // ⇥ (arrow)
+                    exportBtn.setAttribute('data-tooltip', 'Export JPG');
+                    exportBtn.textContent = '💾';
                     exportBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         exportBoardToJPG(board.id);
                     });
                     actions.appendChild(exportBtn);
 
-                    // hapus
                     const delBtn = document.createElement('button');
                     delBtn.className = 'icon-btn del';
-                    delBtn.title = 'Hapus papan';
-                    delBtn.textContent = '\u00D7';
+                    delBtn.setAttribute('data-tooltip', 'Hapus papan');
+                    delBtn.textContent = '❌';
                     delBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
                         deleteBoard(board.id);
@@ -571,6 +815,10 @@
                 saveToStorage();
                 renderBoardList();
                 setStatus('Papan dibuka');
+
+                if (isMobileView() && !sidebar.classList.contains('collapsed')) {
+                    sidebar.classList.add('collapsed');
+                }
             }
 
             function createBoard(name) {
@@ -614,7 +862,6 @@
                 setStatus('Papan dihapus');
             }
 
-            // === Duplikat papan ===
             function duplicateBoard(sourceId) {
                 const source = boards.find(b => b.id === sourceId);
                 if (!source) return;
@@ -646,7 +893,6 @@
                 setStatus('Papan diduplikat');
             }
 
-            // === Salin gambar ke clipboard ===
             async function copyImageToClipboard() {
                 if (!activeBoardId) {
                     setStatus('Tidak ada papan aktif');
@@ -683,9 +929,6 @@
                 }, 'image/png');
             }
 
-            // === FITUR EXPORT KE JPG ===
-            // Buat gambar JPG dengan latar putih (JPEG tidak mendukung transparansi).
-            // Parameter boardId opsional; default papan aktif.
             function exportBoardToJPG(boardId) {
                 const targetId = boardId || activeBoardId;
                 if (!targetId) {
@@ -699,7 +942,6 @@
                     return;
                 }
 
-                // Pastikan data papan aktif yang diekspor adalah versi terbaru
                 let sourceDataURL;
                 if (targetId === activeBoardId) {
                     sourceDataURL = getCanvasDataURL();
@@ -707,28 +949,23 @@
                     sourceDataURL = board.dataURL;
                 }
 
-                // Papan kosong / belum pernah digambar
                 if (!sourceDataURL) {
                     if (!confirm('Papan "' + board.name + '" kosong. Tetap export sebagai JPG putih?')) {
                         return;
                     }
                 }
 
-                // Siapkan kanvas offscreen dengan latar putih
                 const offscreen = document.createElement('canvas');
                 offscreen.width = canvas.width;
                 offscreen.height = canvas.height;
                 const octx = offscreen.getContext('2d');
 
-                // Isi putih dulu (JPG tidak punya transparansi)
                 octx.fillStyle = '#ffffff';
                 octx.fillRect(0, 0, offscreen.width, offscreen.height);
 
                 function finishExport() {
-                    // Kualitas 0.92 — kompromi bagus antara ukuran file & ketajaman
                     const jpgURL = offscreen.toDataURL('image/jpeg', 0.92);
 
-                    // Sanitasi nama file
                     const safeName = (board.name || 'whiteboard')
                         .replace(/[^\w\s\-\.]/g, '')
                         .replace(/\s+/g, '_')
@@ -747,7 +984,6 @@
                 }
 
                 if (!sourceDataURL) {
-                    // papan kosong -> langsung export putih
                     finishExport();
                     return;
                 }
@@ -830,7 +1066,6 @@
                 isDrawing = false;
             }
 
-            // === Auto-save ===
             let autoSaveTimer = null;
             function scheduleAutoSave() {
                 if (!activeBoardId) return;
@@ -843,7 +1078,6 @@
                 }, 800);
             }
 
-            // === Events: Canvas ===
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', () => { stopDrawing(); scheduleAutoSave(); });
@@ -856,7 +1090,6 @@
 
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-            // === Events: warna ===
             const colorButtons = document.querySelectorAll('.color-btn');
             colorButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
@@ -866,7 +1099,6 @@
                 });
             });
 
-            // === Events: slider ===
             const sizeSlider = document.getElementById('sizeSlider');
             const sizeValue = document.getElementById('sizeValue');
             sizeSlider.addEventListener('input', (e) => {
@@ -875,7 +1107,6 @@
                 sizeValue.textContent = val;
             });
 
-            // === Events: tombol ===
             document.getElementById('clearBtn').addEventListener('click', () => {
                 if (!activeBoardId) return;
                 if (!confirm('Hapus semua coretan di papan ini?')) return;
@@ -923,7 +1154,6 @@
                 }
             });
 
-            // === Inisialisasi ===
             function init() {
                 const stored = loadFromStorage();
                 boards = stored.boards;
@@ -948,6 +1178,7 @@
                 }
 
                 renderBoardList();
+                updateSidebarCollapse();
 
                 window.addEventListener('beforeunload', () => {
                     if (activeBoardId && dirty) {
