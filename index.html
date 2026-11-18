@@ -20,141 +20,176 @@
 
         body {
             background: #2d2d2d;
-            display: flex;
-            justify-content: center;
-            align-items: flex-start;
-            min-height: 100vh;
             font-family: 'Segoe UI', Roboto, sans-serif;
             padding: 16px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             overscroll-behavior: none;
         }
 
-        .container {
+        .app {
+            width: 100%;
+            max-width: 880px;
             background: #1e1e1e;
-            padding: 20px;
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
-            display: flex;
-            gap: 16px;
-            max-width: 100%;
+            overflow: hidden;
         }
 
-        .main-area {
+        /* ============ MENU UTAMA ============ */
+        .view-menu {
             display: flex;
             flex-direction: column;
-            min-width: 0;
-            flex: 1;
+            min-height: 500px;
         }
 
-        .whiteboard-wrapper {
-            background: #ffffff;
-            border-radius: 8px;
-            overflow: hidden;
-            border: 1px solid #444;
-            position: relative;
-        }
-
-        canvas {
-            display: block;
-            width: 100%;
-            max-width: 800px;
-            aspect-ratio: 8 / 5;
-            height: auto;
-            cursor: crosshair;
-            background: #ffffff;
-            touch-action: none;
-            -webkit-user-select: none;
-        }
-
-        .toolbar {
+        .app-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 16px;
-            gap: 12px;
-            flex-wrap: wrap;
+            padding: 16px 20px;
+            border-bottom: 1px solid #333;
+            gap: 10px;
         }
 
-        .tool-group {
+        .app-header h1 {
+            font-size: 1.1rem;
+            color: #e0e0e0;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+        }
+
+        .menu-content {
+            padding: 20px;
             display: flex;
-            align-items: center;
+            flex-direction: column;
             gap: 16px;
-            background: #2a2a2a;
-            padding: 8px 14px;
-            border-radius: 8px;
-            border: 1px solid #3a3a3a;
-            flex-wrap: wrap;
         }
 
-        .color-picker {
+        .new-board-row {
             display: flex;
-            gap: 6px;
+            gap: 8px;
         }
 
-        .color-btn {
-            width: 30px;
-            height: 30px;
-            border: none;
-            border-radius: 4px;
+        .new-board-input {
+            flex: 1;
+            background: #2a2a2a;
+            border: 1px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 10px 12px;
+            color: #e0e0e0;
+            font-size: 0.9rem;
+            outline: none;
+            font-family: inherit;
+            min-height: 44px;
+        }
+
+        .new-board-input:focus {
+            border-color: #6bb8ff;
+        }
+
+        .new-board-input::placeholder {
+            color: #666;
+        }
+
+        .boards-title {
+            font-size: 0.8rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+            margin-top: 4px;
+        }
+
+        .boards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 12px;
+        }
+
+        .board-card {
+            background: #252525;
+            border: 1px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
             cursor: pointer;
-            outline: 1px solid #555;
-            outline-offset: 1px;
-            flex-shrink: 0;
+            transition: border-color 0.15s, background 0.15s;
+            display: flex;
+            flex-direction: column;
         }
 
-        .color-btn:hover {
-            outline-color: #888;
+        .board-card:hover {
+            border-color: #555;
+            background: #2a2a2a;
         }
 
-        .color-btn.active {
-            outline: 2px solid #ffffff;
-            outline-offset: 2px;
+        .board-card.active-board {
+            border-color: #6bb8ff;
         }
 
-        .slider-container {
+        .board-thumb {
+            width: 100%;
+            aspect-ratio: 8 / 5;
+            background: #ffffff;
+            display: block;
+            object-fit: cover;
+            border-bottom: 1px solid #333;
+        }
+
+        .board-thumb-empty {
+            width: 100%;
+            aspect-ratio: 8 / 5;
+            background: #f4f4f4;
+            border-bottom: 1px solid #333;
             display: flex;
             align-items: center;
+            justify-content: center;
+            color: #bbb;
+            font-size: 0.75rem;
+        }
+
+        .board-card-info {
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             gap: 8px;
+        }
+
+        .board-card-name {
+            font-size: 0.88rem;
             color: #e0e0e0;
-            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex: 1;
+            font-weight: 500;
+        }
+
+        .board-card-meta {
+            font-size: 0.7rem;
+            color: #777;
+            margin-top: 2px;
+        }
+
+        .board-card-actions {
+            display: flex;
+            gap: 2px;
             flex-shrink: 0;
         }
 
-        .slider-container label {
-            color: #aaa;
-        }
-
-        input[type="range"] {
-            width: 110px;
-            height: 4px;
-            -webkit-appearance: none;
-            background: #444;
-            border-radius: 2px;
-            outline: none;
-            cursor: pointer;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 20px;
-            height: 20px;
-            background: #ffffff;
-            border-radius: 50%;
-            border: 1px solid #3a3a3a;
-            cursor: pointer;
-        }
-
-        .size-value {
-            min-width: 26px;
+        .empty-boards {
+            color: #666;
+            font-size: 0.85rem;
             text-align: center;
-            background: #3a3a3a;
-            padding: 4px 6px;
-            border-radius: 4px;
-            font-size: 0.8rem;
-            color: #e0e0e0;
-            font-variant-numeric: tabular-nums;
+            padding: 40px 10px;
+            font-style: italic;
+            grid-column: 1 / -1;
         }
 
+        /* ============ TOMBOL ============ */
         .btn {
             background: #2a2a2a;
             border: 1px solid #3a3a3a;
@@ -163,10 +198,10 @@
             padding: 8px 12px;
             border-radius: 6px;
             cursor: pointer;
-            font-size: 1.15rem;
-            transition: background 0.15s, color 0.15s, transform 0.1s;
-            min-height: 42px;
-            min-width: 42px;
+            font-size: 1.1rem;
+            transition: background 0.15s, transform 0.1s;
+            min-height: 44px;
+            min-width: 44px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -208,294 +243,260 @@
             to { opacity: 1; }
         }
 
-        .btn-row {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        /* Sidebar */
-        .sidebar {
-            width: 240px;
-            background: #252525;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 14px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            max-height: 640px;
-            flex-shrink: 0;
-        }
-
-        .sidebar-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .sidebar h2 {
-            font-size: 0.85rem;
-            color: #aaa;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .sidebar-toggle {
+        /* ============ EDITOR ============ */
+        .view-editor {
             display: none;
-            background: #2a2a2a;
-            border: 1px solid #3a3a3a;
-            color: #e0e0e0;
-            border-radius: 4px;
-            cursor: pointer;
-            padding: 4px 10px;
-            font-size: 1rem;
-            min-height: 32px;
-            min-width: 32px;
-        }
-
-        .sidebar-content {
-            display: flex;
             flex-direction: column;
-            gap: 10px;
-            flex: 1;
-            min-height: 0;
         }
 
-        .board-list {
-            list-style: none;
+        .view-editor.active {
             display: flex;
-            flex-direction: column;
-            gap: 6px;
-            overflow-y: auto;
-            flex: 1;
-            margin-bottom: 8px;
-            max-height: 420px;
-            min-height: 40px;
         }
 
-        .board-item {
-            background: #2f2f2f;
-            border: 1px solid #3a3a3a;
-            border-radius: 6px;
-            padding: 10px 10px;
-            cursor: pointer;
+        .view-menu.hidden {
+            display: none;
+        }
+
+        .editor-header {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            transition: background 0.15s;
-            gap: 6px;
-            min-height: 44px;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid #333;
+            gap: 10px;
         }
 
-        .board-item:hover {
-            background: #383838;
-        }
-
-        .board-item.active {
-            border-color: #6bb8ff;
-            background: #2f3540;
-        }
-
-        .board-name {
-            font-size: 0.85rem;
+        .editor-title {
+            font-size: 0.95rem;
             color: #e0e0e0;
+            font-weight: 600;
             overflow: hidden;
             text-overflow: ellipsis;
             white-space: nowrap;
             flex: 1;
         }
 
-        .board-item.active .board-name {
-            color: #ffffff;
-            font-weight: 500;
-        }
-
-        .board-actions {
-            display: flex;
-            gap: 2px;
-        }
-
-        .icon-btn {
-            background: transparent;
-            border: none;
-            color: #999;
-            cursor: pointer;
-            font-size: 1rem;
-            line-height: 1;
-            padding: 6px 8px;
+        .editor-title .editable {
+            cursor: text;
+            padding: 4px 6px;
             border-radius: 4px;
-            display: none;
-            min-width: 32px;
-            min-height: 32px;
-            position: relative;
-        }
-
-        .icon-btn:hover {
-            background: #3a3a3a;
-            color: #fff;
-        }
-
-        .icon-btn:hover::after {
-            content: attr(data-tooltip);
-            position: absolute;
-            bottom: calc(100% + 6px);
-            right: 0;
-            background: #000;
-            color: #fff;
-            font-size: 0.7rem;
-            font-weight: 500;
-            padding: 4px 8px;
-            border-radius: 4px;
+            display: inline-block;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
             white-space: nowrap;
-            pointer-events: none;
-            z-index: 20;
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.4);
-            opacity: 0;
-            animation: tooltipFadeIn 0.15s ease-out forwards;
+            vertical-align: middle;
         }
 
-        .board-item.active .icon-btn,
-        .board-item:hover .icon-btn {
-            display: block;
+        .editor-title .editable:hover {
+            background: #2a2a2a;
         }
 
-        .empty-state {
-            color: #666;
-            font-size: 0.8rem;
-            text-align: center;
-            padding: 16px 0;
-            font-style: italic;
-        }
-
-        .new-board-row {
-            display: flex;
-            gap: 6px;
-        }
-
-        .new-board-input {
-            flex: 1;
-            background: #2f2f2f;
-            border: 1px solid #3a3a3a;
-            border-radius: 4px;
-            padding: 8px 10px;
-            color: #e0e0e0;
-            font-size: 0.85rem;
-            outline: none;
-            font-family: inherit;
-            min-width: 0;
-            min-height: 42px;
-        }
-
-        .new-board-input:focus {
-            border-color: #6bb8ff;
-        }
-
-        .new-board-input::placeholder {
-            color: #666;
-        }
-
-        .status {
-            font-size: 0.75rem;
-            color: #888;
-            text-align: center;
-            min-height: 14px;
-        }
-
-        /* === Rename inline === */
-        .rename-input {
-            flex: 1;
+        .editor-title input {
             background: #1e1e1e;
             border: 1px solid #6bb8ff;
             border-radius: 4px;
             padding: 4px 8px;
-            color: #ffffff;
-            font-size: 0.85rem;
-            outline: none;
+            color: #fff;
+            font-size: 0.95rem;
+            font-weight: 600;
             font-family: inherit;
-            min-width: 0;
-            min-height: 28px;
+            outline: none;
+            width: 200px;
+            max-width: 100%;
+        }
+
+        .editor-body {
+            padding: 14px 16px 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .whiteboard-wrapper {
+            background: #ffffff;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 1px solid #444;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            max-width: 100%;
+            aspect-ratio: 8 / 5;
+            height: auto;
+            cursor: crosshair;
+            background: #ffffff;
+            touch-action: none;
+            -webkit-user-select: none;
+        }
+
+        .editor-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .tool-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: #2a2a2a;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3a;
+            flex-wrap: wrap;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 5px;
+        }
+
+        .color-btn {
+            width: 26px;
+            height: 26px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            outline: 1px solid #555;
+            outline-offset: 1px;
+            flex-shrink: 0;
+        }
+
+        .color-btn:hover {
+            outline-color: #888;
+        }
+
+        .color-btn.active {
+            outline: 2px solid #ffffff;
+            outline-offset: 2px;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #e0e0e0;
+            font-size: 0.8rem;
+            flex-shrink: 0;
+        }
+
+        .slider-container label {
+            color: #aaa;
+        }
+
+        input[type="range"] {
+            width: 90px;
+            height: 4px;
+            -webkit-appearance: none;
+            background: #444;
+            border-radius: 2px;
+            outline: none;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #ffffff;
+            border-radius: 50%;
+            border: 1px solid #3a3a3a;
+            cursor: pointer;
+        }
+
+        .size-value {
+            min-width: 24px;
+            text-align: center;
+            background: #3a3a3a;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            color: #e0e0e0;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .status {
+            font-size: 0.72rem;
+            color: #888;
+            text-align: center;
+            min-height: 12px;
         }
 
         /* ============ RESPONSIVE ============ */
-
-        @media (max-width: 1100px) {
-            .container {
-                flex-direction: column;
-                gap: 12px;
-                width: 100%;
-                max-width: 820px;
-            }
-
-            .main-area {
-                width: 100%;
-            }
-
-            canvas {
-                max-width: 100%;
-            }
-
-            .sidebar {
-                width: 100%;
-                max-height: none;
-            }
-
-            .sidebar-header {
-                cursor: pointer;
-            }
-
-            .sidebar-toggle {
-                display: block;
-            }
-
-            .sidebar.collapsed .sidebar-content {
-                display: none;
-            }
-
-            .board-list {
-                max-height: 180px;
-            }
-        }
-
         @media (max-width: 640px) {
             body {
                 padding: 8px;
                 align-items: flex-start;
             }
 
-            .container {
-                padding: 10px;
+            .app {
                 border-radius: 8px;
+            }
+
+            .app-header {
+                padding: 12px 14px;
+            }
+
+            .app-header h1 {
+                font-size: 1rem;
+            }
+
+            .menu-content {
+                padding: 14px;
+            }
+
+            .boards-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+
+            .board-card-info {
+                padding: 8px 10px;
+            }
+
+            .board-card-name {
+                font-size: 0.8rem;
+            }
+
+            .editor-header {
+                padding: 8px 10px;
+            }
+
+            .editor-body {
+                padding: 10px;
                 gap: 10px;
             }
 
-            .whiteboard-wrapper {
-                border-radius: 6px;
-            }
-
-            .toolbar {
+            .editor-toolbar {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 10px;
-                margin-top: 10px;
+                gap: 8px;
             }
 
             .tool-group {
-                width: 100%;
                 justify-content: space-between;
-                padding: 6px 10px;
-                gap: 10px;
+                padding: 5px 8px;
+                gap: 8px;
             }
 
             .color-picker {
-                gap: 5px;
-                flex-wrap: wrap;
+                gap: 4px;
             }
 
             .color-btn {
-                width: 28px;
-                height: 28px;
+                width: 24px;
+                height: 24px;
             }
 
             .slider-container {
@@ -504,113 +505,100 @@
             }
 
             input[type="range"] {
-                width: 100px;
+                width: 80px;
             }
 
             .btn-row {
-                width: 100%;
                 display: grid;
                 grid-template-columns: repeat(5, 1fr);
                 gap: 6px;
-            }
-
-            .btn {
-                padding: 8px;
-                font-size: 1.1rem;
                 width: 100%;
             }
 
-            .sidebar {
-                padding: 10px;
+            .btn {
+                padding: 6px;
+                font-size: 1.05rem;
+                min-height: 42px;
+                min-width: 0;
+                width: 100%;
             }
 
-            .sidebar h2 {
-                font-size: 0.78rem;
-            }
-
-            .board-name {
-                font-size: 0.8rem;
-            }
-
-            .icon-btn {
-                display: block;
-                color: #888;
-            }
-
-            .board-list {
-                max-height: 150px;
+            .editor-title input {
+                width: 140px;
             }
         }
 
         @media (max-width: 380px) {
-            .btn-row {
-                grid-template-columns: repeat(3, 1fr);
+            .boards-grid {
+                grid-template-columns: 1fr;
             }
 
-            .color-btn {
-                width: 24px;
-                height: 24px;
+            .btn-row {
+                grid-template-columns: repeat(3, 1fr);
             }
 
             .slider-container label {
                 display: none;
             }
         }
-
-        @media (hover: none) and (pointer: coarse) {
-            .icon-btn {
-                display: block;
-                color: #888;
-            }
-        }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="main-area">
-            <div class="whiteboard-wrapper">
-                <canvas id="whiteboardCanvas" width="800" height="500"></canvas>
+    <div class="app">
+        <!-- ============ MENU UTAMA ============ -->
+        <div class="view-menu" id="viewMenu">
+            <div class="app-header">
+                <h1>Whiteboard</h1>
             </div>
-
-            <div class="toolbar">
-                <div class="tool-group">
-                    <div class="color-picker" id="colorPicker">
-                        <button class="color-btn active" data-color="#000000" style="background: #000000;" title="Hitam"></button>
-                        <button class="color-btn" data-color="#e74c3c" style="background: #e74c3c;" title="Merah"></button>
-                        <button class="color-btn" data-color="#2ecc71" style="background: #2ecc71;" title="Hijau"></button>
-                        <button class="color-btn" data-color="#3498db" style="background: #3498db;" title="Biru"></button>
-                        <button class="color-btn" data-color="#f1c40f" style="background: #f1c40f;" title="Kuning"></button>
-                        <button class="color-btn" data-color="#9b59b6" style="background: #9b59b6;" title="Ungu"></button>
-                        <button class="color-btn" data-color="#e67e22" style="background: #e67e22;" title="Oranye"></button>
-                    </div>
-
-                    <div class="slider-container">
-                        <label for="sizeSlider">Ukuran</label>
-                        <input type="range" id="sizeSlider" min="1" max="40" value="6" step="1">
-                        <span class="size-value" id="sizeValue">6</span>
-                    </div>
-                </div>
-
-                <div class="btn-row">
-                    <button class="btn" id="clearBtn" data-tooltip="Bersihkan kanvas">🗑️</button>
-                    <button class="btn" id="copyBoardBtn" data-tooltip="Copy papan (duplikat)">📋</button>
-                    <button class="btn" id="copyImgBtn" data-tooltip="Copy gambar ke clipboard">🖼️</button>
-                    <button class="btn" id="exportJpgBtn" data-tooltip="Export ke JPG">💾</button>
-                    <button class="btn" id="saveBtn" data-tooltip="Simpan manual">💿</button>
-                </div>
-            </div>
-        </div>
-
-        <div class="sidebar" id="sidebar">
-            <div class="sidebar-header" id="sidebarHeader">
-                <h2>Papan Gambar</h2>
-                <button class="sidebar-toggle" id="sidebarToggle" data-tooltip="Tampilkan/sembunyikan">☰</button>
-            </div>
-            <div class="sidebar-content" id="sidebarContent">
-                <ul class="board-list" id="boardList"></ul>
+            <div class="menu-content">
                 <div class="new-board-row">
                     <input type="text" class="new-board-input" id="newBoardName" placeholder="Nama papan baru" maxlength="30">
                     <button class="btn" id="addBoardBtn" data-tooltip="Buat papan baru">➕</button>
+                </div>
+                <div class="boards-title">Papan Tersimpan</div>
+                <div class="boards-grid" id="boardsGrid"></div>
+            </div>
+        </div>
+
+        <!-- ============ EDITOR ============ -->
+        <div class="view-editor" id="viewEditor">
+            <div class="editor-header">
+                <button class="btn" id="backBtn" data-tooltip="Kembali ke menu">⬅️</button>
+                <div class="editor-title" id="editorTitle"></div>
+                <button class="btn" id="renameBtn" data-tooltip="Rename papan">✏️</button>
+            </div>
+
+            <div class="editor-body">
+                <div class="whiteboard-wrapper">
+                    <canvas id="whiteboardCanvas" width="800" height="500"></canvas>
+                </div>
+
+                <div class="editor-toolbar">
+                    <div class="tool-group">
+                        <div class="color-picker" id="colorPicker">
+                            <button class="color-btn active" data-color="#000000" style="background: #000000;" title="Hitam"></button>
+                            <button class="color-btn" data-color="#e74c3c" style="background: #e74c3c;" title="Merah"></button>
+                            <button class="color-btn" data-color="#2ecc71" style="background: #2ecc71;" title="Hijau"></button>
+                            <button class="color-btn" data-color="#3498db" style="background: #3498db;" title="Biru"></button>
+                            <button class="color-btn" data-color="#f1c40f" style="background: #f1c40f;" title="Kuning"></button>
+                            <button class="color-btn" data-color="#9b59b6" style="background: #9b59b6;" title="Ungu"></button>
+                            <button class="color-btn" data-color="#e67e22" style="background: #e67e22;" title="Oranye"></button>
+                        </div>
+
+                        <div class="slider-container">
+                            <label for="sizeSlider">Ukuran</label>
+                            <input type="range" id="sizeSlider" min="1" max="40" value="6" step="1">
+                            <span class="size-value" id="sizeValue">6</span>
+                        </div>
+                    </div>
+
+                    <div class="btn-row">
+                        <button class="btn" id="clearBtn" data-tooltip="Bersihkan kanvas">🗑️</button>
+                        <button class="btn" id="copyImgBtn" data-tooltip="Copy gambar">🖼️</button>
+                        <button class="btn" id="exportJpgBtn" data-tooltip="Export JPG">💾</button>
+                        <button class="btn" id="copyBoardBtn" data-tooltip="Duplikat papan">📋</button>
+                        <button class="btn" id="saveBtn" data-tooltip="Simpan">💿</button>
+                    </div>
                 </div>
                 <div class="status" id="status"></div>
             </div>
@@ -624,12 +612,13 @@
 
             const canvas = document.getElementById('whiteboardCanvas');
             const ctx = canvas.getContext('2d');
-            const boardList = document.getElementById('boardList');
+
+            const viewMenu = document.getElementById('viewMenu');
+            const viewEditor = document.getElementById('viewEditor');
+            const boardsGrid = document.getElementById('boardsGrid');
             const newBoardName = document.getElementById('newBoardName');
+            const editorTitle = document.getElementById('editorTitle');
             const statusEl = document.getElementById('status');
-            const sidebar = document.getElementById('sidebar');
-            const sidebarHeader = document.getElementById('sidebarHeader');
-            const sidebarToggle = document.getElementById('sidebarToggle');
 
             // === State ===
             let isDrawing = false;
@@ -640,37 +629,7 @@
             let boards = [];
             let activeBoardId = null;
             let dirty = false;
-
-            // === Responsif ===
-            function isMobileView() {
-                return window.matchMedia('(max-width: 1100px)').matches;
-            }
-
-            function updateSidebarCollapse() {
-                if (isMobileView()) {
-                    if (!sidebar.dataset.userToggled) {
-                        sidebar.classList.add('collapsed');
-                    }
-                } else {
-                    sidebar.classList.remove('collapsed');
-                }
-            }
-
-            sidebarHeader.addEventListener('click', (e) => {
-                if (!isMobileView()) return;
-                if (e.target.closest('button') && e.target !== sidebarToggle) return;
-                sidebar.classList.toggle('collapsed');
-                sidebar.dataset.userToggled = '1';
-            });
-
-            sidebarToggle.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (!isMobileView()) return;
-                sidebar.classList.toggle('collapsed');
-                sidebar.dataset.userToggled = '1';
-            });
-
-            window.addEventListener('resize', updateSidebarCollapse);
+            let currentView = 'menu';
 
             // === Helper localStorage ===
             function loadFromStorage() {
@@ -745,72 +704,93 @@
                 return boards.find(b => b.id === activeBoardId) || null;
             }
 
-            function renderBoardList() {
-                boardList.innerHTML = '';
+            function formatDate(ts) {
+                if (!ts) return '';
+                const d = new Date(ts);
+                const now = new Date();
+                const sameDay = d.toDateString() === now.toDateString();
+                if (sameDay) {
+                    return d.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+                }
+                return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            }
+
+            // === Render Menu ===
+            function renderMenu() {
+                boardsGrid.innerHTML = '';
 
                 if (boards.length === 0) {
-                    const li = document.createElement('li');
-                    li.className = 'empty-state';
-                    li.textContent = 'Belum ada papan.';
-                    boardList.appendChild(li);
+                    const div = document.createElement('div');
+                    div.className = 'empty-boards';
+                    div.textContent = 'Belum ada papan. Buat papan baru di atas.';
+                    boardsGrid.appendChild(div);
                     return;
                 }
 
-                boards.forEach(board => {
-                    const li = document.createElement('li');
-                    li.className = 'board-item' + (board.id === activeBoardId ? ' active' : '');
-                    li.dataset.boardId = board.id;
+                // urutkan terbaru di atas
+                const sorted = [...boards].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
-                    const nameSpan = document.createElement('span');
-                    nameSpan.className = 'board-name';
-                    nameSpan.textContent = board.name;
-                    nameSpan.title = board.name;
+                sorted.forEach(board => {
+                    const card = document.createElement('div');
+                    card.className = 'board-card' + (board.id === activeBoardId ? ' active-board' : '');
 
-                    // Double-click (desktop) atau long-press-friendly: klik nama untuk rename
-                    nameSpan.addEventListener('dblclick', (e) => {
-                        e.stopPropagation();
-                        startRenameBoard(board.id, li);
-                    });
+                    if (board.dataURL) {
+                        const img = document.createElement('img');
+                        img.className = 'board-thumb';
+                        img.src = board.dataURL;
+                        img.alt = board.name;
+                        card.appendChild(img);
+                    } else {
+                        const empty = document.createElement('div');
+                        empty.className = 'board-thumb-empty';
+                        empty.textContent = 'Kosong';
+                        card.appendChild(empty);
+                    }
 
-                    li.appendChild(nameSpan);
+                    const info = document.createElement('div');
+                    info.className = 'board-card-info';
+
+                    const textCol = document.createElement('div');
+                    textCol.style.minWidth = '0';
+                    textCol.style.flex = '1';
+
+                    const nameEl = document.createElement('div');
+                    nameEl.className = 'board-card-name';
+                    nameEl.textContent = board.name;
+                    nameEl.title = board.name;
+
+                    const metaEl = document.createElement('div');
+                    metaEl.className = 'board-card-meta';
+                    metaEl.textContent = formatDate(board.updatedAt);
+
+                    textCol.appendChild(nameEl);
+                    textCol.appendChild(metaEl);
+                    info.appendChild(textCol);
 
                     const actions = document.createElement('div');
-                    actions.className = 'board-actions';
+                    actions.className = 'board-card-actions';
 
-                    // tombol rename
                     const renameBtn = document.createElement('button');
-                    renameBtn.className = 'icon-btn rename';
-                    renameBtn.setAttribute('data-tooltip', 'Rename papan');
+                    renameBtn.className = 'btn';
+                    renameBtn.style.minHeight = '30px';
+                    renameBtn.style.minWidth = '30px';
+                    renameBtn.style.fontSize = '0.85rem';
+                    renameBtn.style.padding = '4px 6px';
+                    renameBtn.setAttribute('data-tooltip', 'Rename');
                     renameBtn.textContent = '✏️';
                     renameBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
-                        startRenameBoard(board.id, li);
+                        startRenameBoard(board.id, card);
                     });
                     actions.appendChild(renameBtn);
 
-                    const copyBtn = document.createElement('button');
-                    copyBtn.className = 'icon-btn copy';
-                    copyBtn.setAttribute('data-tooltip', 'Duplikat papan');
-                    copyBtn.textContent = '📋';
-                    copyBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        duplicateBoard(board.id);
-                    });
-                    actions.appendChild(copyBtn);
-
-                    const exportBtn = document.createElement('button');
-                    exportBtn.className = 'icon-btn export';
-                    exportBtn.setAttribute('data-tooltip', 'Export JPG');
-                    exportBtn.textContent = '💾';
-                    exportBtn.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        exportBoardToJPG(board.id);
-                    });
-                    actions.appendChild(exportBtn);
-
                     const delBtn = document.createElement('button');
-                    delBtn.className = 'icon-btn del';
-                    delBtn.setAttribute('data-tooltip', 'Hapus papan');
+                    delBtn.className = 'btn';
+                    delBtn.style.minHeight = '30px';
+                    delBtn.style.minWidth = '30px';
+                    delBtn.style.fontSize = '0.85rem';
+                    delBtn.style.padding = '4px 6px';
+                    delBtn.setAttribute('data-tooltip', 'Hapus');
                     delBtn.textContent = '❌';
                     delBtn.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -818,114 +798,166 @@
                     });
                     actions.appendChild(delBtn);
 
-                    li.appendChild(actions);
-                    li.addEventListener('click', () => switchBoard(board.id));
-                    boardList.appendChild(li);
+                    info.appendChild(actions);
+                    card.appendChild(info);
+
+                    card.addEventListener('click', () => openBoard(board.id));
+                    boardsGrid.appendChild(card);
                 });
             }
 
-            // === RENAME ===
-            // Ubah nama papan secara inline
-            function startRenameBoard(boardId, liElement) {
+            // === RENAME (inline di kartu menu) ===
+            function startRenameBoard(boardId, cardEl) {
                 const board = boards.find(b => b.id === boardId);
                 if (!board) return;
 
-                // Cegah rename ganda
-                if (liElement.querySelector('.rename-input')) return;
+                if (cardEl.querySelector('.rename-input')) return;
 
-                const nameSpan = liElement.querySelector('.board-name');
-                if (!nameSpan) return;
+                const info = cardEl.querySelector('.board-card-info');
+                const textCol = info ? info.querySelector('div') : null;
+                if (!textCol) return;
 
-                // Sembunyikan span, buat input
-                nameSpan.style.display = 'none';
+                const nameEl = textCol.querySelector('.board-card-name');
+                if (!nameEl) return;
 
+                // replace nameEl with input
                 const input = document.createElement('input');
                 input.type = 'text';
-                input.className = 'rename-input';
+                input.className = 'new-board-input';
+                input.style.padding = '4px 6px';
+                input.style.minHeight = '28px';
+                input.style.fontSize = '0.8rem';
                 input.value = board.name;
                 input.maxLength = MAX_NAME_LENGTH;
 
-                liElement.insertBefore(input, nameSpan);
+                textCol.replaceChild(input, nameEl);
                 input.focus();
                 input.select();
 
-                let cancelled = false;
+                let done = false;
 
-                function finishRename(save) {
-                    if (cancelled) return;
-                    cancelled = true;
+                function finish(save) {
+                    if (done) return;
+                    done = true;
 
                     const newName = input.value.trim();
-
                     if (save && newName && newName !== board.name) {
-                        // Cek nama duplikat
-                        const isDuplicate = boards.some(b => b.id !== boardId && b.name === newName);
-                        if (isDuplicate) {
-                            setStatus('Nama sudah dipakai papan lain');
-                            // batalkan, kembalikan tampilan
-                            input.remove();
-                            nameSpan.style.display = '';
+                        const dup = boards.some(b => b.id !== boardId && b.name === newName);
+                        if (dup) {
+                            setStatus('Nama sudah dipakai');
+                            renderMenu();
                             return;
                         }
+                        board.name = newName;
+                        board.updatedAt = Date.now();
+                        if (boardId === activeBoardId) updateEditorTitle();
+                        saveToStorage();
+                        setStatus('Nama diubah');
+                    }
+                    renderMenu();
+                }
 
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+                    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
+                });
+
+                input.addEventListener('blur', () => {
+                    setTimeout(() => finish(true), 100);
+                });
+
+                input.addEventListener('click', (e) => e.stopPropagation());
+            }
+
+            // === View switching ===
+            function showMenu() {
+                // simpan papan aktif dulu
+                if (activeBoardId && dirty) persistActiveBoard();
+
+                currentView = 'menu';
+                viewEditor.classList.remove('active');
+                viewMenu.classList.remove('hidden');
+                renderMenu();
+            }
+
+            function openBoard(id) {
+                const board = boards.find(b => b.id === id);
+                if (!board) return;
+
+                activeBoardId = id;
+                dirty = false;
+
+                viewMenu.classList.add('hidden');
+                viewEditor.classList.add('active');
+                currentView = 'editor';
+
+                loadImageToCanvas(board.dataURL);
+                updateEditorTitle();
+                saveToStorage();
+                setStatus('');
+            }
+
+            function updateEditorTitle() {
+                const board = getActiveBoard();
+                editorTitle.innerHTML = '';
+                if (!board) return;
+
+                const span = document.createElement('span');
+                span.className = 'editable';
+                span.textContent = board.name;
+                span.title = 'Klik untuk rename';
+                span.addEventListener('click', () => {
+                    startRenameInEditor(board);
+                });
+
+                editorTitle.appendChild(span);
+            }
+
+            function startRenameInEditor(board) {
+                editorTitle.innerHTML = '';
+
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = board.name;
+                input.maxLength = MAX_NAME_LENGTH;
+                editorTitle.appendChild(input);
+                input.focus();
+                input.select();
+
+                let done = false;
+
+                function finish(save) {
+                    if (done) return;
+                    done = true;
+
+                    const newName = input.value.trim();
+                    if (save && newName && newName !== board.name) {
+                        const dup = boards.some(b => b.id !== board.id && b.name === newName);
+                        if (dup) {
+                            setStatus('Nama sudah dipakai');
+                            updateEditorTitle();
+                            return;
+                        }
                         board.name = newName;
                         board.updatedAt = Date.now();
                         saveToStorage();
                         setStatus('Nama diubah');
                     }
-
-                    input.remove();
-                    nameSpan.style.display = '';
-                    renderBoardList();
+                    updateEditorTitle();
                 }
 
                 input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        finishRename(true);
-                    } else if (e.key === 'Escape') {
-                        e.preventDefault();
-                        finishRename(false);
-                    }
+                    if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+                    else if (e.key === 'Escape') { e.preventDefault(); finish(false); }
                 });
 
                 input.addEventListener('blur', () => {
-                    // beri jeda kecil agar Enter tidak memicu blur ganda
-                    setTimeout(() => finishRename(true), 100);
+                    setTimeout(() => finish(true), 100);
                 });
-
-                // Cegah klik pada input memicu switchBoard
-                input.addEventListener('click', (e) => e.stopPropagation());
-                input.addEventListener('mousedown', (e) => e.stopPropagation());
             }
 
-            function persistActiveBoard() {
-                const board = getActiveBoard();
-                if (!board) return false;
-                board.dataURL = getCanvasDataURL();
-                board.updatedAt = Date.now();
-                return saveToStorage();
-            }
-
-            function switchBoard(id) {
-                if (id === activeBoardId) return;
-                if (activeBoardId) persistActiveBoard();
-
-                activeBoardId = id;
-                const board = getActiveBoard();
-                loadImageToCanvas(board ? board.dataURL : null);
-                saveToStorage();
-                renderBoardList();
-                setStatus('Papan dibuka');
-
-                if (isMobileView() && !sidebar.classList.contains('collapsed')) {
-                    sidebar.classList.add('collapsed');
-                }
-            }
-
+            // === CRUD ===
             function createBoard(name) {
-                if (activeBoardId) persistActiveBoard();
-
                 const newBoard = {
                     id: uid(),
                     name: name || 'Papan ' + (boards.length + 1),
@@ -933,34 +965,30 @@
                     updatedAt: Date.now()
                 };
                 boards.push(newBoard);
-                activeBoardId = newBoard.id;
-                clearCanvas();
                 saveToStorage();
-                renderBoardList();
                 setStatus('Papan dibuat');
+                openBoard(newBoard.id);
             }
 
             function deleteBoard(id) {
                 const idx = boards.findIndex(b => b.id === id);
                 if (idx === -1) return;
-                if (boards.length === 1) {
-                    if (!confirm('Hapus papan terakhir? Kanvas akan dikosongkan.')) return;
-                }
+
+                const board = boards[idx];
+                if (!confirm('Hapus papan "' + board.name + '"?')) return;
 
                 boards.splice(idx, 1);
 
                 if (activeBoardId === id) {
                     activeBoardId = boards.length > 0 ? boards[0].id : null;
-                    if (activeBoardId) {
-                        const b = getActiveBoard();
-                        loadImageToCanvas(b.dataURL);
-                    } else {
-                        clearCanvas();
-                    }
                 }
 
                 saveToStorage();
-                renderBoardList();
+
+                if (currentView === 'menu') renderMenu();
+                else if (activeBoardId) openBoard(activeBoardId);
+                else showMenu();
+
                 setStatus('Papan dihapus');
             }
 
@@ -987,118 +1015,19 @@
                     updatedAt: Date.now()
                 };
 
-                const idx = boards.findIndex(b => b.id === sourceId);
-                boards.splice(idx + 1, 0, newBoard);
-
+                boards.push(newBoard);
                 saveToStorage();
-                renderBoardList();
+                renderMenu();
                 setStatus('Papan diduplikat');
             }
 
-            async function copyImageToClipboard() {
-                if (!activeBoardId) {
-                    setStatus('Tidak ada papan aktif');
-                    return;
-                }
-
-                canvas.toBlob(async (blob) => {
-                    if (!blob) {
-                        setStatus('Gagal membuat gambar');
-                        return;
-                    }
-
-                    if (navigator.clipboard && window.ClipboardItem) {
-                        try {
-                            await navigator.clipboard.write([
-                                new ClipboardItem({ 'image/png': blob })
-                            ]);
-                            setStatus('Gambar disalin ke clipboard');
-                            return;
-                        } catch (err) {
-                            console.warn('Clipboard API gagal:', err);
-                        }
-                    }
-
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = (getActiveBoard()?.name || 'whiteboard') + '.png';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    setTimeout(() => URL.revokeObjectURL(url), 1000);
-                    setStatus('Clipboard tidak didukung, gambar diunduh');
-                }, 'image/png');
-            }
-
-            function exportBoardToJPG(boardId) {
-                const targetId = boardId || activeBoardId;
-                if (!targetId) {
-                    setStatus('Tidak ada papan aktif');
-                    return;
-                }
-
-                const board = boards.find(b => b.id === targetId);
-                if (!board) {
-                    setStatus('Papan tidak ditemukan');
-                    return;
-                }
-
-                let sourceDataURL;
-                if (targetId === activeBoardId) {
-                    sourceDataURL = getCanvasDataURL();
-                } else {
-                    sourceDataURL = board.dataURL;
-                }
-
-                if (!sourceDataURL) {
-                    if (!confirm('Papan "' + board.name + '" kosong. Tetap export sebagai JPG putih?')) {
-                        return;
-                    }
-                }
-
-                const offscreen = document.createElement('canvas');
-                offscreen.width = canvas.width;
-                offscreen.height = canvas.height;
-                const octx = offscreen.getContext('2d');
-
-                octx.fillStyle = '#ffffff';
-                octx.fillRect(0, 0, offscreen.width, offscreen.height);
-
-                function finishExport() {
-                    const jpgURL = offscreen.toDataURL('image/jpeg', 0.92);
-
-                    const safeName = (board.name || 'whiteboard')
-                        .replace(/[^\w\s\-\.]/g, '')
-                        .replace(/\s+/g, '_')
-                        .trim() || 'whiteboard';
-
-                    const fileName = safeName + '.jpg';
-
-                    const a = document.createElement('a');
-                    a.href = jpgURL;
-                    a.download = fileName;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-
-                    setStatus('Diekspor: ' + fileName);
-                }
-
-                if (!sourceDataURL) {
-                    finishExport();
-                    return;
-                }
-
-                const img = new Image();
-                img.onload = () => {
-                    octx.drawImage(img, 0, 0, offscreen.width, offscreen.height);
-                    finishExport();
-                };
-                img.onerror = () => {
-                    setStatus('Gagal memuat gambar papan');
-                };
-                img.src = sourceDataURL;
+            function persistActiveBoard() {
+                const board = getActiveBoard();
+                if (!board) return false;
+                board.dataURL = getCanvasDataURL();
+                board.updatedAt = Date.now();
+                dirty = false;
+                return saveToStorage();
             }
 
             // === Gambar ===
@@ -1124,10 +1053,7 @@
 
             function startDrawing(e) {
                 e.preventDefault();
-                if (!activeBoardId) {
-                    setStatus('Buat papan dulu');
-                    return;
-                }
+                if (!activeBoardId) return;
                 const { x, y } = getCoordinates(e);
                 isDrawing = true;
                 lastX = x;
@@ -1180,6 +1106,97 @@
                 }, 800);
             }
 
+            // === Clipboard & Export ===
+            async function copyImageToClipboard() {
+                if (!activeBoardId) return;
+
+                canvas.toBlob(async (blob) => {
+                    if (!blob) return;
+
+                    if (navigator.clipboard && window.ClipboardItem) {
+                        try {
+                            await navigator.clipboard.write([
+                                new ClipboardItem({ 'image/png': blob })
+                            ]);
+                            setStatus('Gambar disalin ke clipboard');
+                            return;
+                        } catch (err) {
+                            console.warn('Clipboard API gagal:', err);
+                        }
+                    }
+
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = (getActiveBoard()?.name || 'whiteboard') + '.png';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setTimeout(() => URL.revokeObjectURL(url), 1000);
+                    setStatus('Clipboard tidak didukung, gambar diunduh');
+                }, 'image/png');
+            }
+
+            function exportBoardToJPG(boardId) {
+                const targetId = boardId || activeBoardId;
+                if (!targetId) return;
+
+                const board = boards.find(b => b.id === targetId);
+                if (!board) return;
+
+                let sourceDataURL;
+                if (targetId === activeBoardId) {
+                    sourceDataURL = getCanvasDataURL();
+                } else {
+                    sourceDataURL = board.dataURL;
+                }
+
+                if (!sourceDataURL) {
+                    if (!confirm('Papan "' + board.name + '" kosong. Tetap export sebagai JPG putih?')) {
+                        return;
+                    }
+                }
+
+                const offscreen = document.createElement('canvas');
+                offscreen.width = canvas.width;
+                offscreen.height = canvas.height;
+                const octx = offscreen.getContext('2d');
+
+                octx.fillStyle = '#ffffff';
+                octx.fillRect(0, 0, offscreen.width, offscreen.height);
+
+                function finishExport() {
+                    const jpgURL = offscreen.toDataURL('image/jpeg', 0.92);
+                    const safeName = (board.name || 'whiteboard')
+                        .replace(/[^\w\s\-\.]/g, '')
+                        .replace(/\s+/g, '_')
+                        .trim() || 'whiteboard';
+                    const fileName = safeName + '.jpg';
+
+                    const a = document.createElement('a');
+                    a.href = jpgURL;
+                    a.download = fileName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    setStatus('Diekspor: ' + fileName);
+                }
+
+                if (!sourceDataURL) {
+                    finishExport();
+                    return;
+                }
+
+                const img = new Image();
+                img.onload = () => {
+                    octx.drawImage(img, 0, 0, offscreen.width, offscreen.height);
+                    finishExport();
+                };
+                img.onerror = () => setStatus('Gagal memuat gambar papan');
+                img.src = sourceDataURL;
+            }
+
+            // === Events ===
             canvas.addEventListener('mousedown', startDrawing);
             canvas.addEventListener('mousemove', draw);
             canvas.addEventListener('mouseup', () => { stopDrawing(); scheduleAutoSave(); });
@@ -1209,9 +1226,68 @@
                 sizeValue.textContent = val;
             });
 
+            // tombol menu
+            document.getElementById('addBoardBtn').addEventListener('click', () => {
+                const name = newBoardName.value.trim();
+                if (!name) { newBoardName.focus(); return; }
+                createBoard(name);
+                newBoardName.value = '';
+            });
+
+            newBoardName.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('addBoardBtn').click();
+            });
+
+            // tombol editor
+            document.getElementById('backBtn').addEventListener('click', showMenu);
+
+            document.getElementById('renameBtn').addEventListener('click', () => {
+                const board = getActiveBoard();
+                if (board) startRenameInEditor(board);
+            });
+
             document.getElementById('clearBtn').addEventListener('click', () => {
                 if (!activeBoardId) return;
                 if (!confirm('Hapus semua coretan di papan ini?')) return;
                 clearCanvas();
                 persistActiveBoard();
-                setStatus('
+                setStatus('Papan dibersihkan');
+            });
+
+            document.getElementById('copyImgBtn').addEventListener('click', copyImageToClipboard);
+
+            document.getElementById('exportJpgBtn').addEventListener('click', () => exportBoardToJPG(activeBoardId));
+
+            document.getElementById('copyBoardBtn').addEventListener('click', () => {
+                if (!activeBoardId) return;
+                duplicateBoard(activeBoardId);
+            });
+
+            document.getElementById('saveBtn').addEventListener('click', () => {
+                if (!activeBoardId) return;
+                if (persistActiveBoard()) setStatus('Disimpan');
+            });
+
+            // === Init ===
+            function init() {
+                const stored = loadFromStorage();
+                boards = stored.boards;
+
+                if (boards.length === 0) {
+                    const b = { id: uid(), name: 'Papan 1', dataURL: null, updatedAt: Date.now() };
+                    boards.push(b);
+                    saveToStorage();
+                }
+
+                showMenu();
+
+                window.addEventListener('beforeunload', () => {
+                    if (activeBoardId && dirty) persistActiveBoard();
+                });
+            }
+
+            init();
+        })();
+    </script>
+</body>
+</html>
