@@ -356,6 +356,7 @@
         .color-picker {
             display: flex;
             gap: 5px;
+            align-items: center;
         }
 
         .color-btn {
@@ -367,6 +368,7 @@
             outline: 1px solid #555;
             outline-offset: 1px;
             flex-shrink: 0;
+            transition: transform 0.1s;
         }
 
         .color-btn:hover {
@@ -376,6 +378,34 @@
         .color-btn.active {
             outline: 2px solid #ffffff;
             outline-offset: 2px;
+            transform: scale(1.1);
+        }
+
+        /* Gaya khusus untuk tombol Eraser */
+        .eraser-btn {
+            background: #1e1e1e;
+            border: 1px solid #444;
+            color: #fff;
+            border-radius: 4px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.15s;
+            margin-left: 4px;
+        }
+
+        .eraser-btn:hover {
+            background: #333;
+        }
+
+        .eraser-btn.active {
+            outline: 2px solid #ffffff;
+            outline-offset: 1px;
+            background: #444;
         }
 
         .slider-container {
@@ -385,6 +415,7 @@
             color: #e0e0e0;
             font-size: 0.8rem;
             flex-shrink: 0;
+            margin-left: 4px;
         }
 
         .slider-container label {
@@ -484,17 +515,15 @@
             background: #ffffff;
         }
 
-        /* Di fullscreen, kanvas menyesuaikan layar tapi tetap menjaga rasio */
         body.fullscreen-mode canvas {
             width: 100%;
             height: 100%;
             max-width: 100%;
             max-height: 100%;
-            aspect-ratio: 8 / 5; /* Kunci rasionya */
-            object-fit: contain; /* Biarkan ada ruang kosong (letterbox) agar tidak gepeng */
+            aspect-ratio: 8 / 5;
+            object-fit: contain;
         }
 
-        /* Sembunyikan toolbar di mode fullscreen */
         body.fullscreen-mode .editor-toolbar {
             display: none;
         }
@@ -605,12 +634,12 @@
             }
 
             input[type="range"] {
-                width: 80px;
+                width: 70px;
             }
 
             .btn-row {
                 display: grid;
-                grid-template-columns: repeat(6, 1fr); /* 6 tombol sekarang */
+                grid-template-columns: repeat(6, 1fr);
                 gap: 6px;
                 width: 100%;
             }
@@ -644,7 +673,6 @@
     </style>
 </head>
 <body>
-    <!-- Tombol keluar fullscreen (hanya muncul di mode fullscreen) -->
     <button class="exit-fullscreen-btn" id="exitFullscreenBtn" data-tooltip="Keluar dari mode fokus">✖️</button>
 
     <div class="app">
@@ -688,6 +716,9 @@
                             <button class="color-btn" data-color="#e67e22" style="background: #e67e22;" title="Oranye"></button>
                         </div>
 
+                        <!-- TOMBOL ERASER DITAMBAHKAN DI SINI -->
+                        <button class="eraser-btn" id="eraserBtn" data-tooltip="Penghapus (Eraser)">🧽</button>
+
                         <div class="slider-container">
                             <label for="sizeSlider">Ukuran</label>
                             <input type="range" id="sizeSlider" min="1" max="40" value="6" step="1">
@@ -696,7 +727,6 @@
                     </div>
 
                     <div class="btn-row">
-                        <!-- Tombol Fullscreen -->
                         <button class="btn" id="fullscreenBtn" data-tooltip="Mode Fokus (Fullscreen)">⛶</button>
                         <button class="btn" id="clearBtn" data-tooltip="Bersihkan kanvas">🗑️</button>
                         <button class="btn" id="copyImgBtn" data-tooltip="Copy gambar">🖼️</button>
@@ -727,6 +757,8 @@
             
             const fullscreenBtn = document.getElementById('fullscreenBtn');
             const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
+            const eraserBtn = document.getElementById('eraserBtn');
+            const colorButtons = document.querySelectorAll('.color-btn');
 
             // === State ===
             let isDrawing = false;
@@ -734,6 +766,7 @@
             let lastY = 0;
             let currentColor = '#000000';
             let currentSize = 6;
+            let isEraserActive = false; // State untuk penghapus
             let boards = [];
             let activeBoardId = null;
             let dirty = false;
@@ -1140,29 +1173,23 @@
             function getCoordinates(e) {
                 const rect = canvas.getBoundingClientRect();
                 
-                // Rasio asli kanvas (800x500 = 1.6)
                 const canvasRatio = canvas.width / canvas.height;
-                // Rasio tampilan elemen kanvas di layar
                 const rectRatio = rect.width / rect.height;
 
                 let renderWidth, renderHeight, offsetX, offsetY;
 
-                // Deteksi letterboxing (jika rasio layar beda dengan rasio kanvas)
                 if (rectRatio > canvasRatio) {
-                    // Layar lebih lebar (ada ruang kosong kiri-kanan)
                     renderHeight = rect.height;
                     renderWidth = renderHeight * canvasRatio;
                     offsetX = (rect.width - renderWidth) / 2;
                     offsetY = 0;
                 } else {
-                    // Layar lebih tinggi (ada ruang kosong atas-bawah)
                     renderWidth = rect.width;
                     renderHeight = renderWidth / canvasRatio;
                     offsetX = 0;
                     offsetY = (rect.height - renderHeight) / 2;
                 }
 
-                // Skala konversi dari ukuran tampil ke resolusi internal (800x500)
                 const scaleX = canvas.width / renderWidth;
                 const scaleY = canvas.height / renderHeight;
 
@@ -1175,7 +1202,6 @@
                     clientY = e.clientY;
                 }
 
-                // Hitung koordinat relatif terhadap area gambar (bukan seluruh elemen)
                 const relativeX = clientX - rect.left - offsetX;
                 const relativeY = clientY - rect.top - offsetY;
 
@@ -1194,9 +1220,12 @@
                 lastY = y;
                 dirty = true;
 
+                // Tentukan warna aktif: jika eraser menyala, gunakan putih
+                const strokeColor = isEraserActive ? '#ffffff' : currentColor;
+
                 ctx.beginPath();
                 ctx.arc(lastX, lastY, currentSize / 2, 0, Math.PI * 2);
-                ctx.fillStyle = currentColor;
+                ctx.fillStyle = strokeColor;
                 ctx.fill();
 
                 ctx.beginPath();
@@ -1209,7 +1238,10 @@
 
                 const { x, y } = getCoordinates(e);
 
-                ctx.strokeStyle = currentColor;
+                // Tentukan warna aktif: jika eraser menyala, gunakan putih
+                const strokeColor = isEraserActive ? '#ffffff' : currentColor;
+
+                ctx.strokeStyle = strokeColor;
                 ctx.lineWidth = currentSize;
                 ctx.lineCap = 'round';
                 ctx.lineJoin = 'round';
@@ -1333,7 +1365,6 @@
             // === Fullscreen Mode ===
             function enterFullscreen() {
                 document.body.classList.add('fullscreen-mode');
-                // Coba minta native fullscreen API (jika didukung)
                 const elem = document.documentElement;
                 if (elem.requestFullscreen) {
                     elem.requestFullscreen().catch(err => console.log('Native fullscreen gagal:', err));
@@ -1344,7 +1375,6 @@
 
             function exitFullscreen() {
                 document.body.classList.remove('fullscreen-mode');
-                // Keluar dari native fullscreen jika sedang aktif
                 if (document.fullscreenElement) {
                     if (document.exitFullscreen) {
                         document.exitFullscreen().catch(err => console.log(err));
@@ -1354,7 +1384,6 @@
                 }
             }
 
-            // Sync saat user keluar native fullscreen via tombol OS / swipe
             document.addEventListener('fullscreenchange', () => {
                 if (!document.fullscreenElement && document.body.classList.contains('fullscreen-mode')) {
                     document.body.classList.remove('fullscreen-mode');
@@ -1379,13 +1408,30 @@
 
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
-            const colorButtons = document.querySelectorAll('.color-btn');
+            // Event Warna
             colorButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     colorButtons.forEach(b => b.classList.remove('active'));
+                    eraserBtn.classList.remove('active'); // Matikan eraser
+                    isEraserActive = false; // Reset state
+                    
                     btn.classList.add('active');
                     currentColor = btn.dataset.color;
                 });
+            });
+
+            // Event Eraser
+            eraserBtn.addEventListener('click', () => {
+                isEraserActive = !isEraserActive;
+                if (isEraserActive) {
+                    // Jika eraser aktif, hilangkan highlight dari semua warna
+                    colorButtons.forEach(b => b.classList.remove('active'));
+                    eraserBtn.classList.add('active');
+                } else {
+                    // Jika eraser dimatikan, kembalikan ke warna hitam sebagai default
+                    document.querySelector('.color-btn[data-color="#000000"]').classList.add('active');
+                    currentColor = '#000000';
+                }
             });
 
             const sizeSlider = document.getElementById('sizeSlider');
