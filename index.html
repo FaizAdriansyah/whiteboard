@@ -219,6 +219,12 @@
             transform: scale(0.95);
         }
 
+        .btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+            transform: none;
+        }
+
         .btn:hover::after {
             content: attr(data-tooltip);
             position: absolute;
@@ -238,6 +244,10 @@
             opacity: 0;
             animation: tooltipFadeIn 0.15s ease-out forwards;
             letter-spacing: 0.2px;
+        }
+
+        .btn:disabled:hover::after {
+            display: none;
         }
 
         @keyframes tooltipFadeIn {
@@ -353,6 +363,16 @@
             flex-wrap: wrap;
         }
 
+        .action-group {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+            background: #2a2a2a;
+            padding: 6px 10px;
+            border-radius: 8px;
+            border: 1px solid #3a3a3a;
+        }
+
         .color-picker {
             display: flex;
             gap: 5px;
@@ -381,7 +401,6 @@
             transform: scale(1.1);
         }
 
-        /* Gaya khusus untuk tombol Eraser */
         .eraser-btn {
             background: #1e1e1e;
             border: 1px solid #444;
@@ -528,7 +547,6 @@
             display: none;
         }
 
-        /* Floating exit button */
         .exit-fullscreen-btn {
             display: none;
             position: fixed;
@@ -613,9 +631,9 @@
                 gap: 8px;
             }
 
-            .tool-group {
-                justify-content: space-between;
-                padding: 5px 8px;
+            .tool-group, .action-group {
+                justify-content: center;
+                padding: 6px 8px;
                 gap: 8px;
             }
 
@@ -634,7 +652,7 @@
             }
 
             input[type="range"] {
-                width: 70px;
+                width: 60px;
             }
 
             .btn-row {
@@ -716,7 +734,6 @@
                             <button class="color-btn" data-color="#e67e22" style="background: #e67e22;" title="Oranye"></button>
                         </div>
 
-                        <!-- TOMBOL ERASER DITAMBAHKAN DI SINI -->
                         <button class="eraser-btn" id="eraserBtn" data-tooltip="Penghapus (Eraser)">🧽</button>
 
                         <div class="slider-container">
@@ -724,6 +741,11 @@
                             <input type="range" id="sizeSlider" min="1" max="40" value="6" step="1">
                             <span class="size-value" id="sizeValue">6</span>
                         </div>
+                    </div>
+
+                    <div class="action-group">
+                        <button class="btn" id="undoBtn" data-tooltip="Undo (Batal)" disabled>↩️</button>
+                        <button class="btn" id="redoBtn" data-tooltip="Redo (Ulangi)" disabled>↪️</button>
                     </div>
 
                     <div class="btn-row">
@@ -744,6 +766,7 @@
         (function() {
             const STORAGE_KEY = 'whiteboard_app_v1';
             const MAX_NAME_LENGTH = 30;
+            const MAX_HISTORY = 20; // Batas maksimal riwayat undo/redo agar memori aman
 
             const canvas = document.getElementById('whiteboardCanvas');
             const ctx = canvas.getContext('2d');
@@ -759,6 +782,11 @@
             const exitFullscreenBtn = document.getElementById('exitFullscreenBtn');
             const eraserBtn = document.getElementById('eraserBtn');
             const colorButtons = document.querySelectorAll('.color-btn');
+            
+            const undoBtn = document.getElementById('undoBtn');
+            const redoBtn = document.getElementById('redoBtn');
+            const sizeSlider = document.getElementById('sizeSlider');
+            const sizeValue = document.getElementById('sizeValue');
 
             // === State ===
             let isDrawing = false;
@@ -766,11 +794,15 @@
             let lastY = 0;
             let currentColor = '#000000';
             let currentSize = 6;
-            let isEraserActive = false; // State untuk penghapus
+            let isEraserActive = false;
             let boards = [];
             let activeBoardId = null;
             let dirty = false;
             let currentView = 'menu';
+
+            // === State Undo/Redo ===
+            let historyStack = [];
+            let historyIndex = -1;
 
             // === Helper localStorage ===
             function loadFromStorage() {
@@ -834,6 +866,61 @@
 
             function getCanvasDataURL() {
                 return canvas.toDataURL('image/png');
+            }
+
+            // === Undo/Redo System ===
+            function saveHistory() {
+                // Jika kita melakukan aksi baru setelah undo, potong sisa redo
+                if (historyIndex < historyStack.length - 1) {
+                    historyStack = historyStack.slice(0, historyIndex + 1);
+                }
+
+                const currentState = getCanvasDataURL();
+                
+                // Jangan simpan jika state-nya sama persis dengan yang terakhir
+                if (historyStack.length > 0 && historyStack[historyIndex] === currentState) return;
+
+                historyStack.push(currentState);
+
+                // Batasi jumlah history
+                if (historyStack.length > MAX_HISTORY) {
+                    historyStack.shift();
+                } else {
+                    historyIndex++;
+                }
+
+                updateHistoryButtons();
+            }
+
+            function undo() {
+                if (historyIndex > 0) {
+                    historyIndex--;
+                    loadImageToCanvas(historyStack[historyIndex]);
+                    updateHistoryButtons();
+                    dirty = true;
+                    scheduleAutoSave();
+                }
+            }
+
+            function redo() {
+                if (historyIndex < historyStack.length - 1) {
+                    historyIndex++;
+                    loadImageToCanvas(historyStack[historyIndex]);
+                    updateHistoryButtons();
+                    dirty = true;
+                    scheduleAutoSave();
+                }
+            }
+
+            function updateHistoryButtons() {
+                undoBtn.disabled = historyIndex <= 0;
+                redoBtn.disabled = historyIndex >= historyStack.length - 1;
+            }
+
+            function resetHistory() {
+                historyStack = [];
+                historyIndex = -1;
+                saveHistory(); // Simpan state awal (kanvas kosong/gambar yang dimuat)
             }
 
             // === Papan ===
@@ -1033,6 +1120,7 @@
                 loadImageToCanvas(board.dataURL);
                 updateEditorTitle();
                 saveToStorage();
+                resetHistory(); // Mulai history baru untuk papan ini
                 setStatus('');
             }
 
@@ -1211,16 +1299,85 @@
                 };
             }
 
+            // === Brush Preview (Lingkaran Outline) ===
+            let previewRect = null;
+
+            function drawBrushPreview(x, y, size) {
+                // Jika ada preview sebelumnya, hapus (kembalikan ke gambar asli di area tersebut)
+                if (previewRect) {
+                    ctx.clearRect(previewRect.x, previewRect.y, previewRect.w, previewRect.h);
+                    
+                    // Ambil gambar dari history state saat ini (jika ada) atau muat ulang dari dataURL
+                    // Lebih aman dan ringan pakai state history yang sekarang
+                    if (historyIndex >= 0) {
+                        const img = new Image();
+                        img.onload = () => {
+                            ctx.drawImage(img, previewRect.x, previewRect.y, previewRect.w, previewRect.h, 
+                                          previewRect.x, previewRect.y, previewRect.w, previewRect.h);
+                            drawCurrentPreview(x, y, size);
+                        };
+                        img.src = historyStack[historyIndex];
+                    } else {
+                        drawCurrentPreview(x, y, size);
+                    }
+                } else {
+                    drawCurrentPreview(x, y, size);
+                }
+            }
+
+            function drawCurrentPreview(x, y, size) {
+                const radius = size / 2;
+                const pad = 4; // Padding untuk stroke
+                const boxSize = size + pad * 2;
+                
+                // Simpan rect untuk pembersihan selanjutnya
+                previewRect = {
+                    x: x - boxSize / 2,
+                    y: y - boxSize / 2,
+                    w: boxSize,
+                    h: boxSize
+                };
+
+                // Gambar lingkaran outline (stroke)
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(x, y, radius, 0, Math.PI * 2);
+                
+                // Beri warna stroke yang kontras
+                ctx.strokeStyle = isEraserActive ? '#000000' : (currentColor === '#ffffff' ? '#000000' : currentColor);
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([4, 4]); // Garis putus-putus agar terlihat seperti "preview"
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            function clearBrushPreview() {
+                if (!previewRect) return;
+                // Kembalikan gambar ke state terakhir
+                if (historyIndex >= 0) {
+                    const img = new Image();
+                    img.onload = () => {
+                        ctx.clearRect(previewRect.x, previewRect.y, previewRect.w, previewRect.h);
+                        ctx.drawImage(img, previewRect.x, previewRect.y, previewRect.w, previewRect.h, 
+                                      previewRect.x, previewRect.y, previewRect.w, previewRect.h);
+                        previewRect = null;
+                    };
+                    img.src = historyStack[historyIndex];
+                }
+            }
+
             function startDrawing(e) {
                 e.preventDefault();
                 if (!activeBoardId) return;
+                
+                clearBrushPreview(); // Hapus preview sebelum mulai gambar
+
                 const { x, y } = getCoordinates(e);
                 isDrawing = true;
                 lastX = x;
                 lastY = y;
                 dirty = true;
 
-                // Tentukan warna aktif: jika eraser menyala, gunakan putih
                 const strokeColor = isEraserActive ? '#ffffff' : currentColor;
 
                 ctx.beginPath();
@@ -1238,7 +1395,6 @@
 
                 const { x, y } = getCoordinates(e);
 
-                // Tentukan warna aktif: jika eraser menyala, gunakan putih
                 const strokeColor = isEraserActive ? '#ffffff' : currentColor;
 
                 ctx.strokeStyle = strokeColor;
@@ -1257,7 +1413,10 @@
 
             function stopDrawing(e) {
                 if (e) e.preventDefault();
-                isDrawing = false;
+                if (isDrawing) {
+                    isDrawing = false;
+                    saveHistory(); // Simpan state setelah selesai menggambar
+                }
             }
 
             let autoSaveTimer = null;
@@ -1412,8 +1571,8 @@
             colorButtons.forEach(btn => {
                 btn.addEventListener('click', () => {
                     colorButtons.forEach(b => b.classList.remove('active'));
-                    eraserBtn.classList.remove('active'); // Matikan eraser
-                    isEraserActive = false; // Reset state
+                    eraserBtn.classList.remove('active');
+                    isEraserActive = false;
                     
                     btn.classList.add('active');
                     currentColor = btn.dataset.color;
@@ -1424,22 +1583,52 @@
             eraserBtn.addEventListener('click', () => {
                 isEraserActive = !isEraserActive;
                 if (isEraserActive) {
-                    // Jika eraser aktif, hilangkan highlight dari semua warna
                     colorButtons.forEach(b => b.classList.remove('active'));
                     eraserBtn.classList.add('active');
                 } else {
-                    // Jika eraser dimatikan, kembalikan ke warna hitam sebagai default
                     document.querySelector('.color-btn[data-color="#000000"]').classList.add('active');
                     currentColor = '#000000';
                 }
             });
 
-            const sizeSlider = document.getElementById('sizeSlider');
-            const sizeValue = document.getElementById('sizeValue');
+            // Slider Events + Brush Preview
             sizeSlider.addEventListener('input', (e) => {
                 const val = parseInt(e.target.value, 10);
                 currentSize = val;
                 sizeValue.textContent = val;
+
+                // Tampilkan preview di tengah kanvas
+                const cx = canvas.width / 2;
+                const cy = canvas.height / 2;
+                drawBrushPreview(cx, cy, currentSize);
+            });
+
+            // Sembunyikan preview saat slider dilepas (mouseup/touchend pada slider)
+            sizeSlider.addEventListener('change', () => {
+                clearBrushPreview();
+            });
+            
+            // Fallback untuk touch/mouse out pada slider
+            sizeSlider.addEventListener('mouseleave', () => {
+                clearBrushPreview();
+            });
+
+            // Undo/Redo Events
+            undoBtn.addEventListener('click', undo);
+            redoBtn.addEventListener('click', redo);
+
+            // Shortcut keyboard untuk Undo/Redo
+            window.addEventListener('keydown', (e) => {
+                if (currentView !== 'editor') return;
+                if (e.ctrlKey || e.metaKey) {
+                    if (e.key === 'z' && !e.shiftKey) {
+                        e.preventDefault();
+                        undo();
+                    } else if ((e.key === 'y') || (e.key === 'z' && e.shiftKey)) {
+                        e.preventDefault();
+                        redo();
+                    }
+                }
             });
 
             // tombol menu
@@ -1466,6 +1655,7 @@
                 if (!activeBoardId) return;
                 if (!confirm('Hapus semua coretan di papan ini?')) return;
                 clearCanvas();
+                saveHistory();
                 persistActiveBoard();
                 setStatus('Papan dibersihkan');
             });
@@ -1500,6 +1690,7 @@
                 }
 
                 showMenu();
+                updateHistoryButtons();
 
                 window.addEventListener('beforeunload', () => {
                     if (activeBoardId && dirty) persistActiveBoard();
